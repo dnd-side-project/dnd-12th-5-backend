@@ -1,6 +1,6 @@
 package com.picktory.config;
 
-//import com.picktory.config.jwt.JwtAuthenticationFilter;
+import com.picktory.config.jwt.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class SecurityConfig {
             "GET", "POST", "PUT", "DELETE"
     );
 
-    //private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
@@ -73,10 +73,10 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-//                .addFilterBefore(
-//                        jwtAuthenticationFilter,
-//                        UsernamePasswordAuthenticationFilter.class
-//                )
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .headers(header -> header
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                         .disable()
