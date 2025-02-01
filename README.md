@@ -2,8 +2,6 @@
 
 ## 🌿 Branch Strategy
 ### Main Branches
-- **Production Branch**: 배포용 브랜치
-- **Deploy Branch**: 개발용 브랜치
 
 ### Branch Naming Convention
 - JIRA 이슈 번호를 사용하여 브랜치 생성
