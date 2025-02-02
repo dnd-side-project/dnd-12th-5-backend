@@ -1,4 +1,4 @@
-git add .github/workflows/deploy.ymlname: Deploy to EC2
+name: Deploy to EC2  # Workflow 이름
 
 on:
   push:
@@ -24,5 +24,4 @@ jobs:
             git pull origin main
             ./gradlew build -x test
             sudo systemctl restart picktory
-
 
