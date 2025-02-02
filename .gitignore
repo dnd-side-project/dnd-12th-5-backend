@@ -23,6 +23,9 @@ bin/
 *.iml
 *.ipr
 *.yml
+
+!/.github/workflows/*.yml
+
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
