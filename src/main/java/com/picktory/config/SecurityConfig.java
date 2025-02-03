@@ -1,6 +1,6 @@
 package com.picktory.config;
 
-//import com.picktory.config.jwt.JwtAuthenticationFilter;
+import com.picktory.config.jwt.JwtAuthenticationFilter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +24,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     public static final String API_V_1 = "/api/v1/";
-    private static final List<String> ORIGIN_PATTERN = List.of("*");
+    private static final List<String> ORIGIN_PATTERN = List.of("https://picktory.net");
     private static final String CORS_CONFIGURATION_PATTERN = "/**";
 
     private static final List<String> ALLOWED_HEADERS = Arrays.asList(
@@ -39,8 +41,6 @@ public class SecurityConfig {
     private static final List<String> ALLOWED_METHODS = Arrays.asList(
             "GET", "POST", "PUT", "DELETE"
     );
-
-    //private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(API_V_1 + "oauth/login").permitAll()            // 카카오 로그인
                         .requestMatchers(API_V_1 + "auth/backup/signup").permitAll()     // 백업 계정 가입
                         .requestMatchers(API_V_1 + "auth/backup/login").permitAll()      // 백업 계정 로그인
-                        .requestMatchers(API_V_1 + "auth/logout").authenticated()        // 로그아웃
+                        .requestMatchers(API_V_1 + "oauth/logout").authenticated()        // 로그아웃
 
                         // User 관련
                         .requestMatchers(API_V_1 + "user/me").authenticated()            // 내 정보 조회/수정/삭제
@@ -73,10 +73,10 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-//                .addFilterBefore(
-//                        jwtAuthenticationFilter,
-//                        UsernamePasswordAuthenticationFilter.class
-//                )
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .headers(header -> header
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                         .disable()
@@ -90,7 +90,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(ORIGIN_PATTERN);
+        configuration.setAllowedOrigins(ORIGIN_PATTERN);
         configuration.setAllowedHeaders(ALLOWED_HEADERS);
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowCredentials(true);
