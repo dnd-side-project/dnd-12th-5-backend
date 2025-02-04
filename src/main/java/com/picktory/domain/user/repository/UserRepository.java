@@ -8,6 +8,9 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    // 삭제되지 않은 사용자 ID로 조회
     Optional<User> findByIdAndIsDeletedFalse(Long id);
+    
+    // 카카오 아이디로 사용자 조회
     Optional<User> findByKakaoId(String kakaoId);
 }
