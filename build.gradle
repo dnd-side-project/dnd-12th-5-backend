@@ -71,17 +71,11 @@ tasks.named('asciidoctor') {
     dependsOn test
 }
 
-// QueryDSL Q클래스 생성 위치 설정
-def querydslDir = "$buildDir/generated/querydsl"
-
+// QueryDSL 제거하고 빌드 테스트
 sourceSets {
-    main.java.srcDirs += ["src/main/java", querydslDir]
-}
-
-tasks.withType(JavaCompile) {
-    options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
-}
-
-clean.doLast {
-    file(querydslDir).deleteDir()
+    main {
+        java {
+            srcDirs = ["src/main/java"]
+        }
+    }
 }
