@@ -87,6 +87,7 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(httpSecurityCorsConfigurer -> corsConfigurationSource())
+                .formLogin(AbstractHttpConfigurer::disable) // /login 자동 리디렉트 방지 추가 설정
                 .build();
     }
 
