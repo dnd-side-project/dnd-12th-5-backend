@@ -26,78 +26,91 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Constants
+    private static final String API_V1 = "/api/v1/";
+    private static final List<String> ALLOWED_ORIGINS = List.of(
+            "https://picktory.net",
+            "https://www.picktory.net",
+            "http://localhost:3000",
+            "http://localhost:8080"
+    );
+    private static final List<String> ALLOWED_HEADERS = Arrays.asList(
+            "Origin",
+            "Content-Type",
+            "Accept",
+            "Authorization",
+            "X-Requested-With"
+    );
+    private static final List<String> ALLOWED_METHODS = Arrays.asList(
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS"
+    );
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    public static final String API_V_1 = "/api/v1/";
-    private static final List<String> ORIGIN_PATTERN = List.of("https://picktory.net");
-    private static final String CORS_CONFIGURATION_PATTERN = "/**";
-
-    private static final List<String> ALLOWED_HEADERS = Arrays.asList(
-            "Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"
-    );
-    private static final List<String> ALLOWED_METHODS = Arrays.asList(
-            "GET", "POST", "PUT", "DELETE"
-    );
-
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
-        return http.authorizeHttpRequests(auth -> auth
-                        // Swagger & Preflight
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        return http
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-
-                        // Auth 관련
-                        .requestMatchers(API_V_1 + "oauth/login").permitAll()            // 카카오 로그인
-                        .requestMatchers(API_V_1 + "auth/backup/signup").permitAll()     // 백업 계정 가입
-                        .requestMatchers(API_V_1 + "auth/backup/login").permitAll()      // 백업 계정 로그인
-                        .requestMatchers(API_V_1 + "oauth/logout").authenticated()        // 로그아웃
-
-                        // User 관련
-                        .requestMatchers(API_V_1 + "user/me").authenticated()            // 내 정보 조회/수정/삭제
-                        .requestMatchers(API_V_1 + "user/me/backup").authenticated()     // 백업 계정 정보 수정
-
-                        // Bundle & Gift 관련
-                        .requestMatchers(API_V_1 + "bundles").authenticated()                    // 보따리 생성/조회
-                        .requestMatchers(API_V_1 + "bundles/main").authenticated()               // 메인화면 보따리 목록
-                        .requestMatchers(API_V_1 + "bundles/{id}/**").authenticated()            // 보따리 상세/수정/삭제
-                        .requestMatchers(API_V_1 + "bundles/{id}/save").authenticated()          // 임시저장
-                        .requestMatchers(API_V_1 + "bundles/{id}/gifts/**").authenticated()      // 선물 관리
-                        .requestMatchers(API_V_1 + "bundles/{id}/delivery").authenticated()      // 배달부 설정
-                        .requestMatchers(API_V_1 + "bundles/{id}/deliver").authenticated()       // 배달 시작
-
-                        // 수신자용 API (링크 접근)
-                        .requestMatchers(API_V_1 + "gifts/{link}/**").permitAll()                // 선물 조회/답변
-
+                        .requestMatchers(getPublicEndpoints()).permitAll()
+                        .requestMatchers(getAuthenticatedEndpoints()).authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                )
-                .headers(header -> header
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
-                        .disable()
-                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .headers(header -> header.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable).disable())
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(httpSecurityCorsConfigurer -> corsConfigurationSource())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .build();
+    }
+
+    private String[] getPublicEndpoints() {
+        return new String[]{
+                "/api/v1/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/favicon.ico",
+                API_V1 + "oauth/login",
+                API_V1 + "auth/backup/signup",
+                API_V1 + "auth/backup/login",
+                API_V1 + "gifts/{link}/**"
+        };
+    }
+
+    private String[] getAuthenticatedEndpoints() {
+        return new String[]{
+                API_V1 + "oauth/logout",
+                API_V1 + "user/me",
+                API_V1 + "user/me/backup",
+                API_V1 + "bundles",
+                API_V1 + "bundles/main",
+                API_V1 + "bundles/{id}/**",
+                API_V1 + "bundles/{id}/save",
+                API_V1 + "bundles/{id}/gifts/**",
+                API_V1 + "bundles/{id}/delivery",
+                API_V1 + "bundles/{id}/deliver"
+        };
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(ORIGIN_PATTERN);
+        configuration.setAllowedOrigins(ALLOWED_ORIGINS);
         configuration.setAllowedHeaders(ALLOWED_HEADERS);
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration(CORS_CONFIGURATION_PATTERN, configuration);
-
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
