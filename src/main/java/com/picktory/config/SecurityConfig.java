@@ -45,6 +45,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
+                        // 루트 URL(/) 접근 허용 (/login으로 자동 리디렉트되지 않음)
+                        .requestMatchers("/", "/favicon.ico", "/default-ui.css").permitAll()
+
                         // Swagger & Preflight
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
