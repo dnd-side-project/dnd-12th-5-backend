@@ -75,7 +75,7 @@ tasks.named('asciidoctor') {
 def querydslDir = "$buildDir/generated/querydsl"
 
 sourceSets {
-    main.java.srcDirs += [ querydslDir ]
+    main.java.srcDirs += ["src/main/java", querydslDir]
 }
 
 tasks.withType(JavaCompile) {
