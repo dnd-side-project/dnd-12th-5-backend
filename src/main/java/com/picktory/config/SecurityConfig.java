@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers(getAuthenticatedEndpoints()).authenticated()
                         .anyRequest().authenticated()
                 )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 비활성화
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(header -> header.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable).disable())
                 .httpBasic(AbstractHttpConfigurer::disable)
