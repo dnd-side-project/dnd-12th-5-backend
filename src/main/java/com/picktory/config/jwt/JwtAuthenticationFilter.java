@@ -15,6 +15,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -25,17 +26,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/") ||
+                path.startsWith("/api/v1/oauth/login") ||
+                path.startsWith("/api/v1/auth/backup") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.equals("/favicon.ico") ||
+                path.equals("/default-ui.css");
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         try {
             String jwtToken = parseJwt(request);
 
-            if (jwtToken != null) {
-                if (jwtTokenProvider.validateToken(jwtToken)) {
-                    processValidToken(jwtToken);
-                } else {
-                    processExpiredToken(jwtToken, response);
-                }
+            // 토큰이 없는 경우 바로 다음 필터로 진행
+            if (jwtToken == null) {
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            // 토큰 검증 및 처리
+            if (jwtTokenProvider.validateToken(jwtToken)) {
+                processValidToken(jwtToken);
+            } else {
+                processExpiredToken(jwtToken, response);
+            }
+
+            // 정상적인 경우 다음 필터로 진행
+            filterChain.doFilter(request, response);
+
         } catch (ExpiredJwtException e) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "토큰이 만료되었습니다.");
         } catch (JwtException e) {
@@ -43,8 +66,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 오류가 발생했습니다.");
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private String parseJwt(HttpServletRequest request) {
@@ -55,13 +76,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    // 토큰 처리 로직 분리
     private void processValidToken(String token) {
         Authentication auth = jwtTokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
-    // 만료 토큰 검증후 재발급
     private void processExpiredToken(String oldToken, HttpServletResponse response) {
         String username = jwtTokenProvider.getUserName(oldToken);
         JwTokenDto newToken = jwtTokenProvider.generateToken(username);
