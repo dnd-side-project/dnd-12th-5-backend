@@ -34,7 +34,8 @@ public class SecurityConfig {
             "http://localhost:3000",
             "http://localhost:8080",
             // 백엔드 서버 테스트용
-            "https://api.picktory.net/"
+            "https://api.picktory.net/",
+            "https://api.picktory.net"
     );
     private static final List<String> ALLOWED_HEADERS = Arrays.asList(
             "Origin",
