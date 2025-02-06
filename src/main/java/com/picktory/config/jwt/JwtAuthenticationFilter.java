@@ -29,6 +29,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.equals("/") ||
+                path.equals("/api/v1") ||      // 추가: 슬래시 없이
+                path.equals("/api/v1/") ||     // 추가: 슬래시 포함
                 path.startsWith("/api/v1/oauth/login") ||
                 path.startsWith("/api/v1/auth/backup") ||
                 path.startsWith("/swagger-ui") ||
