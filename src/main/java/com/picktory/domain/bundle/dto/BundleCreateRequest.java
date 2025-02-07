@@ -12,6 +12,4 @@ public class BundleCreateRequest {
 
     @NotNull
     private DesignType designType;
-
-    private String link;
 }
