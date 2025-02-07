@@ -1,6 +1,6 @@
 package com.picktory.bundle.service;
 
-import com.picktory.domain.bundle.dto.BundleCreateRequest;
+import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.enums.DesignType;
 import com.picktory.domain.bundle.service.BundleService;
@@ -46,7 +46,7 @@ class BundleServiceTest {
         when(userService.getCurrentActiveUser()).thenReturn(mockUser);
 
         // ✅ Given (보따리 생성 요청)
-        BundleCreateRequest request = new BundleCreateRequest();
+        BundleRequest request = new BundleRequest();
         request.setName("Test Bundle");
         request.setDesignType(DesignType.RED);
 

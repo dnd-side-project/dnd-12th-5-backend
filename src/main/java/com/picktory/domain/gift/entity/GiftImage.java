@@ -21,23 +21,18 @@ public class GiftImage {
     private Long giftId;  // 선물 ID 저장
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String s3Url; // S3에 저장된 이미지 URL
+    private String imageUrl; // S3에 저장된 이미지 URL
 
     @Column(nullable = false)
     private Boolean isPrimary; // 대표 썸네일 여부
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime uploadedAt; // 이미지 업로드 시각
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime uploadedAt;
 
-    @PrePersist
-    protected void onUpload() {
-        this.uploadedAt = LocalDateTime.now();
-    }
-
-    public static GiftImage createGiftImage(Long giftId, String s3Url, boolean isPrimary) {
+    public static GiftImage createGiftImage(Long giftId, String imageUrl, boolean isPrimary) {
         return GiftImage.builder()
                 .giftId(giftId)
-                .s3Url(s3Url)
+                .imageUrl(imageUrl)
                 .isPrimary(isPrimary)
                 .uploadedAt(LocalDateTime.now())
                 .build();
