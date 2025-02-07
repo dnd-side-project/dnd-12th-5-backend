@@ -49,7 +49,6 @@ class BundleServiceTest {
         BundleCreateRequest request = new BundleCreateRequest();
         request.setName("Test Bundle");
         request.setDesignType(DesignType.RED);
-        request.setLink("http://test.com");
 
         // ✅ Given (Mock Bundle 저장)
         Bundle mockBundle = Bundle.builder()
@@ -58,7 +57,6 @@ class BundleServiceTest {
                 .name(request.getName())
                 .designType(request.getDesignType())
                 .deliveryCharacterType(null)
-                .link(request.getLink())
                 .status(BundleStatus.DRAFT)
                 .isRead(false)
                 .build();
