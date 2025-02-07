@@ -32,7 +32,6 @@ public class BundleService {
                         .name(request.getName())
                         .designType(request.getDesignType())
                         .deliveryCharacterType(null)
-                        .link(request.getLink())
                         .status(BundleStatus.DRAFT)
                         .isRead(false)
                         .build()
