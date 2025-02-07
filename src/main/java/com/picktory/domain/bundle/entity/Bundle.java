@@ -49,6 +49,11 @@ public class Bundle {
 
     private LocalDateTime publishedAt; // PUBLISHED 상태가 되었을 때
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isRead = false; // 응답 확인 여부 (기본값: false)
+
+
     /**
      * 최초 생성 시 createdAt, updatedAt을 현재 시간으로 설정
      */
@@ -77,5 +82,24 @@ public class Bundle {
         this.deliveryCharacterType = characterType;
         this.status = BundleStatus.PUBLISHED;
         this.publishedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 응답 완료 시 보따리 상태를 COMPLETED로 변경
+     */
+    public void complete() {
+        if (this.status != BundleStatus.PUBLISHED) {
+            throw new IllegalStateException("PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다.");
+        }
+        this.status = BundleStatus.COMPLETED;
+    }
+
+    /**
+     * 사용자가 응답을 확인하면 isRead를 true로 변경
+     */
+    public void markAsRead() {
+        if (this.status == BundleStatus.COMPLETED && this.isRead == Boolean.FALSE) {
+            this.isRead = true;
+        }
     }
 }
