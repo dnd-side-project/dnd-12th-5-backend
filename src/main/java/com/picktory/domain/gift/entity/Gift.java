@@ -1,6 +1,6 @@
 package com.picktory.domain.gift.entity;
 
-import com.picktory.domain.gift.dto.GiftCreateRequest;
+import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.enums.GiftResponseTag;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,15 +38,10 @@ public class Gift {
     @Builder.Default
     private Boolean isResponsed = false; // 응답 여부
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt; // 생성 시각
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public static Gift createGift(Long bundleId, GiftCreateRequest request) {
+    public static Gift createGift(Long bundleId, GiftRequest request) {
         return Gift.builder()
                 .bundleId(bundleId)
                 .name(request.getName())
