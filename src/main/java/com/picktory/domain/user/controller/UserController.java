@@ -17,9 +17,9 @@ public class UserController {
     private final UserService userService;
 
     // 카카오 소셜 로그인
-    @PostMapping("/oauth/login")
-    public BaseResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
-        UserLoginResponse response = userService.login(request.getCode());
+    @GetMapping("/oauth/login")
+    public BaseResponse<UserLoginResponse> login(@RequestParam String code) {
+        UserLoginResponse response = userService.login(code);
         return new BaseResponse<>(response);
     }
 
