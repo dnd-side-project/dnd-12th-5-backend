@@ -85,7 +85,7 @@ public class UserService {
     }
 
     // 현재 로그인한 사용자 조회
-    public User getCurrentActiveUser() {
+    private User getCurrentActiveUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new IllegalStateException(BaseResponseStatus.INVALID_JWT.getMessage());
