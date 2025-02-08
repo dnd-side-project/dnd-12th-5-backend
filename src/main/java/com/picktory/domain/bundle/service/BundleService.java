@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import java.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,15 @@ public class BundleService {
 
         // 현재 로그인한 유저 가져오기
         User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 하루 보따리 생성 개수 제한 검사
+        long todayBundleCount = bundleRepository.countByUserIdAndCreatedAtAfter(
+                currentUser.getId(), LocalDateTime.now().toLocalDate().atStartOfDay()
+        );
+
+        if (todayBundleCount >= 10) {
+            throw new IllegalStateException("하루에 최대 10개의 보따리만 생성할 수 있습니다.");
+        }
 
         // 보따리 이름 검증
         if (request.getName() == null || request.getName().trim().isEmpty()) {
