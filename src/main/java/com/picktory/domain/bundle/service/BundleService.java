@@ -38,6 +38,16 @@ public class BundleService {
         // 현재 로그인한 유저 가져오기
         User currentUser = authenticationService.getAuthenticatedUser();
 
+        // 보따리 이름 검증
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("보따리 이름을 입력하세요.");
+        }
+
+        // 보따리 디자인 타입 검증
+        if (request.getDesignType() == null) {
+            throw new IllegalArgumentException("보따리 디자인을 선택하세요.");
+        }
+
         // 보따리에 담긴 선물이 2개 미만인 경우 예외 처리
         if (request.getGifts() == null || request.getGifts().size() < 2) {
             throw new IllegalArgumentException("보따리는 최소 2개의 선물을 포함해야 합니다.");
