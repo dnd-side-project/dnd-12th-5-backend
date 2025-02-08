@@ -33,7 +33,6 @@ public class SecurityConfig {
             "https://www.picktory.net",
             "http://localhost:3000",
             "http://localhost:8080",
-            // 백엔드 서버 테스트용
             "https://api.picktory.net/",
             "https://api.picktory.net"
     );
@@ -57,7 +56,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http
@@ -67,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(getAuthenticatedEndpoints()).authenticated()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 비활성화
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(header -> header.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable).disable())
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -85,7 +83,6 @@ public class SecurityConfig {
                 "/v3/api-docs/**",
                 "/favicon.ico",
                 "/default-ui.css",
-                "/api/v1/**",
                 API_V1 + "oauth/login",
                 API_V1 + "auth/backup/signup",
                 API_V1 + "auth/backup/login",

@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,15 +30,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.equals("/") ||
-                path.equals("/api/v1") ||      // 추가: 슬래시 없이
-                path.equals("/api/v1/") ||     // 추가: 슬래시 포함
+        log.debug("Current request path: {}", path);
+
+        boolean shouldNotFilter = path.equals("/") ||
+                path.equals("/api/v1") ||
+                path.equals("/api/v1/") ||
                 path.startsWith("/api/v1/oauth/login") ||
                 path.startsWith("/api/v1/auth/backup") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs") ||
                 path.equals("/favicon.ico") ||
                 path.equals("/default-ui.css");
+
+        log.debug("Should not filter request: {}", shouldNotFilter);
+        return shouldNotFilter;
     }
 
     @Override
@@ -44,28 +51,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwtToken = parseJwt(request);
+            log.debug("JWT Token present: {}", jwtToken != null);
 
-            // 토큰이 없는 경우 바로 다음 필터로 진행
             if (jwtToken == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // 토큰 검증 및 처리
             if (jwtTokenProvider.validateToken(jwtToken)) {
                 processValidToken(jwtToken);
             } else {
                 processExpiredToken(jwtToken, response);
             }
 
-            // 정상적인 경우 다음 필터로 진행
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException e) {
+            log.error("Token expired", e);
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "토큰이 만료되었습니다.");
         } catch (JwtException e) {
+            log.error("Invalid token", e);
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "유효한 토큰이 아닙니다.");
         } catch (Exception e) {
+            log.error("Filter error", e);
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 오류가 발생했습니다.");
         }
     }
@@ -81,6 +89,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void processValidToken(String token) {
         Authentication auth = jwtTokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(auth);
+        log.debug("Valid token processed for user: {}", auth.getName());
     }
 
     private void processExpiredToken(String oldToken, HttpServletResponse response) {
@@ -90,5 +99,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Authentication auth = jwtTokenProvider.getAuthentication(newToken.getAccessToken());
         SecurityContextHolder.getContext().setAuthentication(auth);
+        log.debug("Expired token renewed for user: {}", username);
     }
 }
