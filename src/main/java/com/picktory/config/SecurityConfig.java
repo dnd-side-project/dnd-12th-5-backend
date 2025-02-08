@@ -78,6 +78,7 @@ public class SecurityConfig {
     private String[] getPublicEndpoints() {
         return new String[]{
                 "/",
+                API_V1,
                 "/swagger-ui.html",
                 "/swagger-ui/**",
                 "/v3/api-docs/**",
