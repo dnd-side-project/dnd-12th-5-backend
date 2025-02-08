@@ -1,5 +1,6 @@
 package com.picktory.domain.bundle.service;
 
+import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.entity.Bundle;
@@ -11,7 +12,6 @@ import com.picktory.domain.gift.entity.GiftImage;
 import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.user.entity.User;
-import com.picktory.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class BundleService {
     private final BundleRepository bundleRepository;
     private final GiftRepository giftRepository;
     private final GiftImageRepository giftImageRepository;
-    private final UserService userService;
+    private final AuthenticationService authenticationService;
 
     /**
      * 보따리 최초 생성
@@ -36,7 +36,7 @@ public class BundleService {
     public BundleResponse createBundle(BundleRequest request) {
 
         // 현재 로그인한 유저 가져오기
-        User currentUser = userService.getCurrentActiveUser();
+        User currentUser = authenticationService.getAuthenticatedUser();
 
         // 보따리에 담긴 선물이 2개 미만인 경우 예외 처리
         if (request.getGifts() == null || request.getGifts().size() < 2) {
