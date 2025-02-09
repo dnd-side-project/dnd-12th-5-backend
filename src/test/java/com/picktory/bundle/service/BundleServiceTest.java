@@ -1,5 +1,7 @@
 package com.picktory.bundle.service;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
@@ -15,16 +17,22 @@ import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.user.entity.User;
 import com.picktory.support.config.jwt.TestJwtTokenProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -46,20 +54,26 @@ class BundleServiceTest {
     @InjectMocks
     private BundleService bundleService;
 
-    // ✅ 공통 JWT 사용
-    private static final String TEST_JWT_TOKEN = TestJwtTokenProvider.generateTestToken("1");
+    private User mockUser;
 
-    @Test
-    void 보따리_최초생성_선물포함_테스트() {
-        // ✅ Given (Mock 유저 생성)
-        User mockUser = User.builder()
+    @BeforeEach
+    void setUp() {
+        mockUser = User.builder()
                 .kakaoId("testKakaoId")
                 .nickname("TestUser")
                 .build();
 
-        when(authenticationService.getAuthenticatedUser()).thenReturn(mockUser);
+        // ✅ ID를 명확히 설정- getId()가 null이 되지 않도록
+        ReflectionTestUtils.setField(mockUser, "id", 1L);
 
-        // ✅ Given (선물 목록 생성)
+        when(authenticationService.getAuthenticatedUser()).thenReturn(mockUser);
+    }
+
+
+    @Test
+    @DisplayName("✅ 보따리 최초 생성 성공")
+    void 보따리_최초생성_테스트() {
+        // Given (선물 목록 생성)
         GiftRequest giftRequest1 = new GiftRequest();
         giftRequest1.setMessage("첫 번째 선물 메시지");
         giftRequest1.setImageUrls(List.of("http://image1.com"));
@@ -70,13 +84,13 @@ class BundleServiceTest {
 
         List<GiftRequest> giftRequests = Arrays.asList(giftRequest1, giftRequest2);
 
-        // ✅ Given (보따리 생성 요청)
+        // Given (보따리 생성 요청)
         BundleRequest request = new BundleRequest();
         request.setName("Test Bundle");
         request.setDesignType(DesignType.RED);
         request.setGifts(giftRequests);
 
-        // ✅ Given (Mock Bundle 저장)
+        // Given (Mock Bundle 저장)
         Bundle mockBundle = Bundle.builder()
                 .id(1L)
                 .userId(1L)
@@ -88,51 +102,83 @@ class BundleServiceTest {
 
         when(bundleRepository.save(any(Bundle.class))).thenReturn(mockBundle);
 
-        // ✅ Given (Mock 선물 저장)
-        Gift mockGift1 = Gift.builder()
-                .id(100L)
-                .bundleId(mockBundle.getId())
-                .message("첫 번째 선물 메시지")
-                .build();
+        // Given (Mock 선물 저장)
+        Gift mockGift1 = Gift.builder().id(100L).bundleId(mockBundle.getId()).message("첫 번째 선물 메시지").build();
+        Gift mockGift2 = Gift.builder().id(101L).bundleId(mockBundle.getId()).message("두 번째 선물 메시지").build();
+        when(giftRepository.saveAll(any())).thenReturn(List.of(mockGift1, mockGift2));
 
-        Gift mockGift2 = Gift.builder()
-                .id(101L)
-                .bundleId(mockBundle.getId())
-                .message("두 번째 선물 메시지")
-                .build();
+        // Given (Mock 선물 이미지 저장)
+        GiftImage mockImage1 = GiftImage.builder().id(1000L).giftId(100L).imageUrl("http://image1.com").build();
+        GiftImage mockImage2 = GiftImage.builder().id(1001L).giftId(101L).imageUrl("http://image2.com").build();
+        when(giftImageRepository.saveAll(any())).thenReturn(List.of(mockImage1, mockImage2));
 
-        List<Gift> mockGifts = List.of(mockGift1, mockGift2);
-        when(giftRepository.saveAll(any())).thenReturn(mockGifts);
-
-        // ✅ Given (Mock 선물 이미지 저장)
-        GiftImage mockImage1 = GiftImage.builder()
-                .id(1000L)
-                .giftId(100L)
-                .imageUrl("http://image1.com")
-                .build();
-
-        GiftImage mockImage2 = GiftImage.builder()
-                .id(1001L)
-                .giftId(101L)
-                .imageUrl("http://image2.com")
-                .build();
-
-        List<GiftImage> mockGiftImages = List.of(mockImage1, mockImage2);
-        when(giftImageRepository.saveAll(any())).thenReturn(mockGiftImages);
-
-        // ✅ When (보따리 생성)
+        // When (보따리 생성)
         BundleResponse response = bundleService.createBundle(request);
 
-        // ✅ Then (검증)
+        // Then (검증)
         assertThat(response.getUserId()).isEqualTo(1L);
         assertThat(response.getName()).isEqualTo("Test Bundle");
         assertThat(response.getDesignType()).isEqualTo(request.getDesignType());
         assertThat(response.getStatus()).isEqualTo(BundleStatus.DRAFT);
-        assertThat(response.getGifts()).hasSize(2);  // ✅ 저장된 선물 개수 검증
-        assertThat(response.getGifts().get(0).getMessage()).isEqualTo("첫 번째 선물 메시지");
-        assertThat(response.getGifts().get(1).getMessage()).isEqualTo("두 번째 선물 메시지");
+        assertThat(response.getGifts()).hasSize(2);
+    }
 
-        // ✅ 로그 출력
-        System.out.println("✅ 생성된 보따리: " + response);
+    @Test
+    @DisplayName("❌ 하루 최대 보따리 개수 초과")
+    void 보따리_생성_실패_하루최대개수초과() {
+        // Given
+        when(bundleRepository.countByUserIdAndCreatedAtAfter(any(Long.class), any(LocalDateTime.class)))
+                .thenReturn(10L); // 이미 10개 생성됨
+
+        BundleRequest request = new BundleRequest();
+        request.setName("Test Bundle");
+        request.setDesignType(DesignType.RED);
+        request.setGifts(Arrays.asList(new GiftRequest(), new GiftRequest()));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_DAILY_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("❌ 보따리 이름 없음")
+    void 보따리_생성_실패_이름없음() {
+        // Given
+        BundleRequest request = new BundleRequest();
+        request.setName(""); // 빈 문자열
+        request.setDesignType(DesignType.RED);
+        request.setGifts(Arrays.asList(new GiftRequest(), new GiftRequest()));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_NAME_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("❌ 보따리 디자인 타입 없음")
+    void 보따리_생성_실패_디자인타입없음() {
+        // Given
+        BundleRequest request = new BundleRequest();
+        request.setName("Test Bundle");
+        request.setDesignType(null); // 디자인 타입 없음
+        request.setGifts(Arrays.asList(new GiftRequest(), new GiftRequest()));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_DESIGN_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("❌ 보따리에 선물이 2개 미만")
+    void 보따리_생성_실패_선물_2개미만() {
+        // Given
+        BundleRequest request = new BundleRequest();
+        request.setName("Test Bundle");
+        request.setDesignType(DesignType.RED);
+        request.setGifts(Collections.singletonList(new GiftRequest())); // 1개만 추가
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
     }
 }

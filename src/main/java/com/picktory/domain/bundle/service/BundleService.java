@@ -1,5 +1,7 @@
 package com.picktory.domain.bundle.service;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
@@ -45,22 +47,22 @@ public class BundleService {
         );
 
         if (todayBundleCount >= 10) {
-            throw new IllegalStateException("하루에 최대 10개의 보따리만 생성할 수 있습니다.");
+            throw new BaseException(BaseResponseStatus.BUNDLE_DAILY_LIMIT_EXCEEDED);
         }
 
         // 보따리 이름 검증
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("보따리 이름을 입력하세요.");
+            throw new BaseException(BaseResponseStatus.BUNDLE_NAME_REQUIRED);
         }
 
         // 보따리 디자인 타입 검증
         if (request.getDesignType() == null) {
-            throw new IllegalArgumentException("보따리 디자인을 선택하세요.");
+            throw new BaseException(BaseResponseStatus.BUNDLE_DESIGN_REQUIRED);
         }
 
         // 보따리에 담긴 선물이 2개 미만인 경우 예외 처리
         if (request.getGifts() == null || request.getGifts().size() < 2) {
-            throw new IllegalArgumentException("보따리는 최소 2개의 선물을 포함해야 합니다.");
+            throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
         }
 
         // 보따리 저장
