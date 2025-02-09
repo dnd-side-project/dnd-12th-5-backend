@@ -1,8 +1,10 @@
 package com.picktory.domain.bundle.controller;
 
+import com.picktory.common.BaseResponse;
 import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
+import com.picktory.domain.bundle.dto.BundleUpdateRequest;
 import com.picktory.domain.bundle.service.BundleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,18 @@ public class BundleController {
     @PostMapping
     public ResponseEntity<BundleResponse> createBundle(@Valid @RequestBody BundleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(bundleService.createBundle(request));
+    }
+
+    /**
+     * 보따리 업데이트 API
+     */
+    @PutMapping("/{bundleId}")
+    public ResponseEntity<BaseResponse<BundleResponse>> updateBundle(
+            @PathVariable Long bundleId,
+            @Valid @RequestBody BundleUpdateRequest request
+    ) {
+        BundleResponse response = bundleService.updateBundle(bundleId, request);
+        return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
     /**

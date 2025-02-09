@@ -29,6 +29,8 @@ public enum BaseResponseStatus {
     INVALID_CHARACTER_TYPE(false, 400, "유효하지 않은 배달부 캐릭터입니다."),
     INVALID_LINK(false, 400, "유효하지 않은 배달 링크입니다."),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
+    BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
+
 
     /**
      * 500: Server 오류
