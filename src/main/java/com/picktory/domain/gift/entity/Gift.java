@@ -1,6 +1,7 @@
 package com.picktory.domain.gift.entity;
 
 import com.picktory.domain.gift.dto.GiftRequest;
+import com.picktory.domain.gift.dto.GiftUpdateRequest;
 import com.picktory.domain.gift.enums.GiftResponseTag;
 import jakarta.persistence.*;
 import lombok.*;
@@ -50,5 +51,24 @@ public class Gift {
                 .responseTag(null)
                 .isResponsed(false)
                 .build();
+    }
+
+    public static Gift createGift(Long bundleId, GiftUpdateRequest request) {
+        return Gift.builder()
+                .bundleId(bundleId)
+                .name(request.getName())
+                .message(request.getMessage())
+                .purchaseUrl(request.getPurchaseUrl())
+                .responseTag(null)
+                .isResponsed(false)
+                .build();
+    }
+
+
+    // 기존 선물 정보 업데이트
+    public void updateGift(GiftUpdateRequest request) {
+        this.name = request.getName();
+        this.message = request.getMessage();
+        this.purchaseUrl = request.getPurchaseUrl();
     }
 }

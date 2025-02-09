@@ -24,6 +24,9 @@ public enum BaseResponseStatus {
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
     BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 2개의 선물을 포함해야 합니다."),
 
+    BUNDLE_NOT_FOUND(false, 404, "해당 보따리를 찾을 수 없습니다."),
+    BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
+
 
     /**
      * 500: Server 오류
