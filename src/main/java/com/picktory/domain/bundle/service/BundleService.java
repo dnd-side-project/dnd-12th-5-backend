@@ -1,5 +1,7 @@
 package com.picktory.domain.bundle.service;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import java.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +41,28 @@ public class BundleService {
         // 현재 로그인한 유저 가져오기
         User currentUser = authenticationService.getAuthenticatedUser();
 
+        // 하루 보따리 생성 개수 제한 검사
+        long todayBundleCount = bundleRepository.countByUserIdAndCreatedAtAfter(
+                currentUser.getId(), LocalDateTime.now().toLocalDate().atStartOfDay()
+        );
+
+        if (todayBundleCount >= 10) {
+            throw new BaseException(BaseResponseStatus.BUNDLE_DAILY_LIMIT_EXCEEDED);
+        }
+
+        // 보따리 이름 검증
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new BaseException(BaseResponseStatus.BUNDLE_NAME_REQUIRED);
+        }
+
+        // 보따리 디자인 타입 검증
+        if (request.getDesignType() == null) {
+            throw new BaseException(BaseResponseStatus.BUNDLE_DESIGN_REQUIRED);
+        }
+
         // 보따리에 담긴 선물이 2개 미만인 경우 예외 처리
         if (request.getGifts() == null || request.getGifts().size() < 2) {
-            throw new IllegalArgumentException("보따리는 최소 2개의 선물을 포함해야 합니다.");
+            throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
         }
 
         // 보따리 저장
