@@ -1,5 +1,6 @@
 package com.picktory.domain.bundle.dto;
 
+import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.bundle.enums.DesignType;
 import com.picktory.domain.gift.dto.GiftRequest;
 import jakarta.validation.constraints.NotNull;
@@ -20,4 +21,6 @@ public class BundleRequest {
     @NotNull
     @Size(min = 2)
     private List<GiftRequest> gifts;
+
+    private DeliveryCharacterType deliveryCharacterType;
 }
