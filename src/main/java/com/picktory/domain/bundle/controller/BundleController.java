@@ -23,4 +23,15 @@ public class BundleController {
     public ResponseEntity<BundleResponse> createBundle(@Valid @RequestBody BundleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(bundleService.createBundle(request));
     }
+
+    /**
+     * 배달부 캐릭터 설정 API
+     */
+    @PutMapping("/{id}/delivery")
+    public ResponseEntity<BundleResponse> updateDeliveryCharacter(
+            @PathVariable Long id,
+            @Valid @RequestBody BundleRequest request
+    ) {
+        return ResponseEntity.ok(bundleService.updateDeliveryCharacter(id, request));
+    }
 }
