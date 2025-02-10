@@ -106,4 +106,22 @@ public class BundleService {
             //
         return BundleResponse.fromEntity(bundle, savedGifts, savedGiftImages);
     }
+
+    /**
+     * 배달부 캐릭터 설정
+     */
+    public BundleResponse updateDeliveryCharacter(Long bundleId, BundleRequest request) {
+        // 현재 로그인한 유저 가져오기
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 조회
+        Bundle bundle = bundleRepository.findByIdAndUserId(bundleId, currentUser.getId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+
+        // 배달부 캐릭터 설정
+        bundle.updateDeliveryCharacter(request.getDeliveryCharacterType());
+
+        // 변경된 보따리 정보만 반환
+        return BundleResponse.fromEntity(bundle, null, null);
+    }
 }
