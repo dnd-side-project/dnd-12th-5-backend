@@ -204,12 +204,6 @@ public class BundleService {
         }
     }
 
-    private void validateBundleUpdateRequest(BundleUpdateRequest request) {
-        if (request.getGifts() == null || request.getGifts().size() < 2) {
-            throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
-        }
-    }
-
     /**
      * 대표 이미지 설정 로직 (각 선물당 첫 번째 이미지를 대표 이미지로 설정)
      */
