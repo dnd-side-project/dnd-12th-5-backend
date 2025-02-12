@@ -56,13 +56,4 @@ public class BundleResponse {
                                 .collect(Collectors.toList()))
                 .build();
     }
-
-    public static BundleResponse fromEntityForDeliveryCharacter(Bundle bundle) {
-        return BundleResponse.builder()
-                .id(bundle.getId())
-                .deliveryCharacterType(bundle.getDeliveryCharacterType())
-                .status(bundle.getStatus())
-                .updatedAt(bundle.getUpdatedAt())
-                .build();
-    }
 }

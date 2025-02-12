@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -118,10 +119,13 @@ public class BundleService {
         Bundle bundle = bundleRepository.findByIdAndUserId(bundleId, currentUser.getId())
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
 
-        // 배달부 캐릭터 설정
-        bundle.updateDeliveryCharacter(request.getDeliveryCharacterType());
+        // 배달 링크 생성 (UUID로 고유성 보장)
+        String link = "/delivery/" + UUID.randomUUID().toString();
 
-        // 변경된 보따리 정보만 반환
+        // 배달부 캐릭터 설정 및 링크 저장
+        bundle.updateDeliveryCharacter(request.getDeliveryCharacterType(), link);
+
+        // 변경된 보따리 정보 반환
         return BundleResponse.fromEntity(bundle, null, null);
     }
 }

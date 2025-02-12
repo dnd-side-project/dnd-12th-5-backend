@@ -10,6 +10,6 @@ public interface BundleRepository extends JpaRepository<Bundle, Long> {
      * 특정 사용자가 오늘 생성한 보따리 개수 조회
      */
     long countByUserIdAndCreatedAtAfter(Long userId, LocalDateTime today);
-
+    Optional<Bundle> findByLink(String link);
     Optional<Bundle> findByIdAndUserId(Long id, Long userId);
 }

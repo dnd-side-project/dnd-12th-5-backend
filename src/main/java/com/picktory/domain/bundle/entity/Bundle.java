@@ -8,6 +8,7 @@ import com.picktory.domain.bundle.enums.DesignType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "bundles")
@@ -35,7 +36,7 @@ public class Bundle {
     @Column(nullable = true) // NULL 허용
     private DeliveryCharacterType deliveryCharacterType;
 
-    @Column(length = 255)
+    @Column(nullable = false, unique = true)
     private String link; // 배달용 링크 (없으면 PUBLISHED 불가)
 
     @Enumerated(EnumType.STRING)
@@ -58,9 +59,12 @@ public class Bundle {
     /**
      * 배달부 캐릭터 설정
      */
-    public void updateDeliveryCharacter(DeliveryCharacterType type) {
+    public void updateDeliveryCharacter(DeliveryCharacterType type, String link) {
         validateDraftStatus();
+        validateDeliveryCharacter(type);
+
         this.deliveryCharacterType = type;
+        this.link = link;
         this.status = BundleStatus.PUBLISHED;
         this.publishedAt = LocalDateTime.now();
     }
@@ -103,6 +107,11 @@ public class Bundle {
     public void markAsRead() {
         if (this.status == BundleStatus.COMPLETED && this.isRead == Boolean.FALSE) {
             this.isRead = true;
+        }
+    }
+    private void validateDeliveryCharacter(DeliveryCharacterType type) {
+        if (type == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_CHARACTER_TYPE);
         }
     }
 }

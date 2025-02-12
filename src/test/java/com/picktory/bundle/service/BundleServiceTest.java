@@ -209,6 +209,8 @@ class BundleServiceTest {
         // Then
         assertThat(response.getDeliveryCharacterType()).isEqualTo(DeliveryCharacterType.CHARACTER_1);
         assertThat(response.getStatus()).isEqualTo(BundleStatus.PUBLISHED);
+        assertThat(response.getLink()).isNotNull();  // 링크 생성 확인
+        assertThat(response.getLink()).startsWith("/delivery/");  // 링크 형식 확인
     }
 
     @Test
@@ -244,6 +246,7 @@ class BundleServiceTest {
                 .designType(DesignType.RED)
                 .status(BundleStatus.PUBLISHED) // 이미 PUBLISHED 상태
                 .deliveryCharacterType(DeliveryCharacterType.CHARACTER_2)
+                .link("/delivery/existing-link")
                 .isRead(false)
                 .build();
 
