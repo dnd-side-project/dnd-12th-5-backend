@@ -12,10 +12,6 @@ public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
     List<GiftImage> findByGiftId(Long giftId);
 
     @Modifying
-    @Query("DELETE FROM GiftImage gi WHERE gi.giftId IN :giftIds")
+    @Query("DELETE FROM GiftImage gi WHERE gi.gift.id IN :giftIds")
     void deleteByGiftIds(@Param("giftIds") List<Long> giftIds);
-
-    @Query("SELECT gi FROM GiftImage gi WHERE gi.giftId IN :giftIds")
-    List<GiftImage> findByGiftIds(@Param("giftIds") List<Long> giftIds);
-
 }

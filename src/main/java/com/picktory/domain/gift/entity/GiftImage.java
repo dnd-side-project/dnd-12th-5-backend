@@ -17,8 +17,10 @@ public class GiftImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long giftId;  // 선물 ID 저장
+    @ManyToOne(fetch = FetchType.LAZY) // 🎯 ManyToOne 단방향 관계 설정
+    @JoinColumn(name = "gift_id", nullable = false)
+    private Gift gift;
+
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String imageUrl; // S3에 저장된 이미지 URL
@@ -29,12 +31,15 @@ public class GiftImage {
     @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime uploadedAt;
 
-    public static GiftImage createGiftImage(Long giftId, String imageUrl, boolean isPrimary) {
+    public static GiftImage createGiftImage(Gift gift, String imageUrl, boolean isPrimary) {
         return GiftImage.builder()
-                .giftId(giftId)
+                .gift(gift)
                 .imageUrl(imageUrl)
                 .isPrimary(isPrimary)
                 .uploadedAt(LocalDateTime.now())
                 .build();
+    }
+    public void setPrimary(boolean isPrimary) {
+        this.isPrimary = isPrimary;
     }
 }

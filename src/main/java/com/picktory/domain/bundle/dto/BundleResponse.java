@@ -50,7 +50,7 @@ public class BundleResponse {
                         gifts.stream()
                                 .map(gift -> GiftResponse.fromEntity(
                                         gift, images.stream()
-                                                .filter(image -> image.getGiftId().equals(gift.getId()))
+                                                .filter(image -> image.getGift().equals(gift))
                                                 .collect(Collectors.toList())
                                 ))
                                 .collect(Collectors.toList()))

@@ -19,6 +19,7 @@ import com.picktory.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.util.CollectionUtils;
 import java.time.LocalDateTime;
 
@@ -112,35 +113,28 @@ public class BundleService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        // 삭제될 선물 목록 (요청에서 제외된 기존 선물)
+        // 삭제할 선물 목록
         List<Gift> giftsToDelete = existingGifts.stream()
                 .filter(gift -> !receivedGiftIds.contains(gift.getId()))
                 .toList();
 
-        // 생성될 선물 개수 계산
-        long newGiftsCount = request.getGifts().size() - receivedGiftIds.size();
+        // 디버깅: 삭제될 선물 확인
+        giftsToDelete.forEach(gift ->
+                log.info("삭제 예정 선물 - ID: {}, 이름: {}, 메시지: {}, 구매링크: {}",
+                        gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl())
+        );
 
         // 최종 선물 개수 검증 (삭제 후에도 2개 이상인지 확인)
-        long finalGiftCount = receivedGiftIds.size() + newGiftsCount;
+        long finalGiftCount = receivedGiftIds.size() + (request.getGifts().size() - receivedGiftIds.size());
         if (finalGiftCount < 2) {
             throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
         }
 
-        // 디버깅: 삭제될 선물 확인
-        log.info("삭제될 선물 개수: {}", giftsToDelete.size());
-        giftsToDelete.forEach(gift ->
-                log.info("삭제 예정 선물 - ID: {}, 이름: {}, 메시지: {}, 구매링크: {}", gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl())
-        );
-
-        //
-        // 여기까지 통과하면 삭제, 수정, 추가 트랜잭션 진행 가능
-        //
-
-        // 삭제할 선물 처리
-        List<Long> giftIdsToDelete = giftsToDelete.stream().map(Gift::getId).toList();
-        if (!giftIdsToDelete.isEmpty()) {
+        // 삭제할 선물 및 이미지 삭제
+        if (!giftsToDelete.isEmpty()) {
+            List<Long> giftIdsToDelete = giftsToDelete.stream().map(Gift::getId).toList();
             giftImageRepository.deleteByGiftIds(giftIdsToDelete);
-            giftRepository.deleteByIds(giftIdsToDelete);
+            giftRepository.deleteAll(giftsToDelete);
         }
 
         // 수정 및 추가할 선물 처리
@@ -149,9 +143,8 @@ public class BundleService {
 
         for (GiftUpdateRequest giftUpdateRequest : request.getGifts()) {
             if (giftUpdateRequest.getId() != null && existingGiftMap.containsKey(giftUpdateRequest.getId())) {
-                // 기존 선물 수정
                 Gift existingGift = existingGiftMap.get(giftUpdateRequest.getId());
-                existingGift.updateGift(giftUpdateRequest); // [리팩토링 필요]: 수정사항 없는 기존 선물도 재저장함. 수정사항 없는 선물은 재저장하지 않도록 검증 추가하기
+                existingGift.updateGift(giftUpdateRequest);
                 updatedGifts.add(existingGift);
             } else {
                 // 새로운 선물 추가
@@ -159,26 +152,9 @@ public class BundleService {
             }
         }
 
-        // 디버깅: 수정될 기존 선물 목록 출력
-        log.info("수정될 기존 선물 개수: {}", updatedGifts.size());
-        updatedGifts.forEach(gift ->
-                log.info("수정 예정 선물 - ID: {}, 이름: {}, 메시지: {}, 구매링크: {}", gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl())
-        );
-
-        // 디버깅: 새로 추가될 선물 목록 출력
-        log.info("추가될 선물 개수: {}", newGifts.size());
-        newGifts.forEach(gift ->
-                log.info("추가 예정 선물 - ID: {}, 이름: {}, 메시지: {}, 구매링크: {}", gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl())
-        );
-
-
-        // DB에 저장할 선물 반영하기 ----------
-         // 1. 기존 수정된 선물(updatedGifts) + 새로 추가될 선물(newGifts) 합치기
-        List<Gift> allGiftsToSave = new ArrayList<>(updatedGifts);
-        allGiftsToSave.addAll(newGifts);
-
-         // 2. JPA에 한 번만 저장
-        List<Gift> savedGifts = giftRepository.saveAll(allGiftsToSave);
+        // 저장할 선물 저장
+        List<Gift> savedGifts = giftRepository.saveAll(updatedGifts);
+        savedGifts.addAll(giftRepository.saveAll(newGifts));
 
         // 디버깅: 최종 저장된 선물 목록 확인
         log.info("=== 최종 저장된 선물 목록 ===");
@@ -193,7 +169,6 @@ public class BundleService {
 
         return BundleResponse.fromEntity(bundle, savedGifts, newImages);
     }
-
 
     /**
      * 보따리 유효성 검증
@@ -216,20 +191,16 @@ public class BundleService {
     private List<GiftImage> setPrimaryImage(List<? extends GiftImageRequest> giftRequests, List<Gift> savedGifts) {
         List<GiftImage> newImages = new ArrayList<>();
 
-        // 기존 선물 ID와 이미지 매핑 (ID가 없는 경우 -1 * (i+1) 사용하여 중복 방지)
-        Map<Long, List<String>> giftImagesMap = IntStream.range(0, giftRequests.size())
-                .boxed()
-                .collect(Collectors.toMap(
-                        i -> Optional.ofNullable(giftRequests.get(i).getId()).orElse(-1L * (i + 1)),
-                        i -> Optional.ofNullable(giftRequests.get(i).getImageUrls()).orElseGet(ArrayList::new),
-                        (existing, replacement) -> existing // 중복 키 발생 시 기존 값 유지
-                ));
+        // savedGifts와 giftRequests의 순서가 동일하다고 가정
+        for (int i = 0; i < savedGifts.size(); i++) {
+            Gift gift = savedGifts.get(i);
+            GiftImageRequest giftRequest = giftRequests.get(i);
+            List<String> imageUrls = giftRequest.getImageUrls();
 
-        for (Gift gift : savedGifts) {
-            List<String> imageUrls = giftImagesMap.getOrDefault(gift.getId(), new ArrayList<>());
-
-            for (int i = 0; i < imageUrls.size(); i++) {
-                newImages.add(GiftImage.createGiftImage(gift.getId(), imageUrls.get(i), i == 0));
+            // 각 giftRequest의 첫 번째 이미지가 대표 이미지(isPrimary=true)
+            for (int j = 0; j < imageUrls.size(); j++) {
+                boolean isPrimary = (j == 0);
+                newImages.add(GiftImage.createGiftImage(gift.getId(), imageUrls.get(j), isPrimary));
             }
         }
         return newImages;
@@ -259,4 +230,5 @@ public class BundleService {
         // 변경된 보따리 정보 반환
         return BundleResponse.fromEntity(savedBundle, null, null);
     }
+
 }
