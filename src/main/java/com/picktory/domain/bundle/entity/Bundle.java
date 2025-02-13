@@ -53,6 +53,17 @@ public class Bundle {
     @Builder.Default
     private Boolean isRead = false; // 응답 확인 여부 (기본값: false)
 
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     /**
      * 보따리 배달 완료 후, 배달 정보가 설정되었을 때 PUBLISHED 상태로 변경
      */

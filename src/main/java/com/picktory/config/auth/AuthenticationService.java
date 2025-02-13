@@ -23,8 +23,13 @@ public class AuthenticationService {
             throw new IllegalStateException(BaseResponseStatus.INVALID_JWT.getMessage());
         }
 
-        Long currentUserId = Long.parseLong(authentication.getName());
-        return userRepository.findByIdAndIsDeletedFalse(currentUserId)
+        // 사용자의 ID가 숫자가 아니라면 Kakao ID로 조회
+        String authName = authentication.getName();
+        System.out.println("인증된 사용자 ID: " + authName);
+
+        // 만약 `authName`이 숫자가 아닌 경우, Kakao OAuth로 로그인한 사용자로 가정
+        return userRepository.findByKakaoId(authName)
                 .orElseThrow(() -> new IllegalStateException(BaseResponseStatus.USER_NOT_FOUND.getMessage()));
     }
+
 }
