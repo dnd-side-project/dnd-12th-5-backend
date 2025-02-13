@@ -108,8 +108,9 @@ class BundleServiceTest {
         when(giftRepository.saveAll(any())).thenReturn(List.of(mockGift1, mockGift2));
 
         // Given (Mock 선물 이미지 저장)
-        GiftImage mockImage1 = GiftImage.builder().id(1000L).giftId(100L).imageUrl("http://image1.com").build();
-        GiftImage mockImage2 = GiftImage.builder().id(1001L).giftId(101L).imageUrl("http://image2.com").build();
+        GiftImage mockImage1 = GiftImage.builder().id(1000L).gift(mockGift1).imageUrl("http://image1.com").build();
+        GiftImage mockImage2 = GiftImage.builder().id(1001L).gift(mockGift2).imageUrl("http://image2.com").build();
+
         when(giftImageRepository.saveAll(any())).thenReturn(List.of(mockImage1, mockImage2));
 
         // When (보따리 생성)

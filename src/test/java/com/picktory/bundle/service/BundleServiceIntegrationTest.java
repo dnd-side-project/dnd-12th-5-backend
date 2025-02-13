@@ -10,6 +10,8 @@ import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.bundle.service.BundleService;
 import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.entity.Gift;
+import com.picktory.domain.gift.entity.GiftImage;
+import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
@@ -26,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 /*
-MySQL과 연동한 테스트
- */
+✅ MySQL과 연동한 테스트
+*/
 
 @SpringBootTest
 @Transactional
@@ -42,6 +44,9 @@ class BundleServiceIntegrationTest {
 
     @Autowired
     private GiftRepository giftRepository;
+
+    @Autowired
+    private GiftImageRepository giftImageRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -75,40 +80,60 @@ class BundleServiceIntegrationTest {
     @Test
     @WithMockUser(username = "testuserkakao") // ✅ 테스트에서 인증된 사용자로 가정
     @DisplayName("✅ MySQL 연동 - 보따리 최초 생성 성공")
-    void 보따리_최초생성_테스트_MySQL() {
-        // Given - 보따리 생성 요청
-        GiftRequest giftRequest1 = new GiftRequest();
-        giftRequest1.setName("첫선물");
-        giftRequest1.setMessage("첫 번째 선물내용");
-        giftRequest1.setImageUrls(List.of("http://image1.com"));
-
-        GiftRequest giftRequest2 = new GiftRequest();
-        giftRequest2.setName("둘째선물");
-        giftRequest2.setMessage("두 번째 선물내용");
-        giftRequest2.setImageUrls(List.of("http://image2.com"));
-
+    void 보따리_최초_생성_테스트() {
+        // Given: 보따리 생성 요청 데이터
         BundleRequest request = new BundleRequest();
-        request.setName("Test Bundle");
+        request.setName("내 생일 보따리");
         request.setDesignType(DesignType.RED);
-        request.setGifts(List.of(giftRequest1, giftRequest2));
+        request.setGifts(List.of(
+                new GiftRequest("향수", "좋은 향기로 기억되길!", "https://example.com/perfume",
+                        List.of("https://s3.example.com/image1.jpg", "https://s3.example.com/image2.jpg")),
+                new GiftRequest("초콜릿", "달콤한 하루 보내!", "https://example.com/chocolate",
+                        List.of("https://s3.example.com/chocolate1.jpg", "https://s3.example.com/chocolate2.jpg")),
+                new GiftRequest("사탕", "안녕!", "https://example.com/candy",
+                        List.of("https://s3.example.com/candyfirst.jpg", "https://s3.example.com/candy.jpg", "https://s3.example.com/candy3.jpg"))
 
-        // ✅ When - 보따리 생성
+        ));
+
+        // When: API 호출
         BundleResponse response = bundleService.createBundle(request);
 
-        // ✅ Then - 저장된 데이터 검증
-        assertThat(response.getUserId()).isEqualTo(testUser.getId());
-        assertThat(response.getName()).isEqualTo(request.getName());
-        assertThat(response.getDesignType()).isEqualTo(request.getDesignType());
+        // Then: 응답 데이터 검증
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isNotNull();
+        assertThat(response.getName()).isEqualTo("내 생일 보따리");
+        assertThat(response.getDesignType()).isEqualTo(DesignType.RED);
         assertThat(response.getStatus()).isEqualTo(BundleStatus.DRAFT);
-        assertThat(response.getGifts()).hasSize(2);
+        assertThat(response.getGifts()).hasSize(3);
 
-        // ✅ MySQL에 실제 저장된 보따리 확인
+        // DB 저장 데이터 검증
         Bundle savedBundle = bundleRepository.findById(response.getId()).orElseThrow();
-        assertThat(savedBundle.getName()).isEqualTo("Test Bundle");
+        assertThat(savedBundle.getName()).isEqualTo("내 생일 보따리");
+        assertThat(savedBundle.getStatus()).isEqualTo(BundleStatus.DRAFT);
 
-        // ✅ MySQL에 실제 저장된 선물 확인
+        // 선물 및 이미지 데이터 검증
         List<Gift> savedGifts = giftRepository.findByBundleId(savedBundle.getId());
-        assertThat(savedGifts).hasSize(2);
-    }
+        assertThat(savedGifts).hasSize(3);
 
+        List<GiftImage> savedImages = giftImageRepository.findAll();
+        assertThat(savedImages).hasSize(7); // 총 7개의 이미지가 저장되어야 함 (각 선물당 2,2,3개씩)
+
+        // 대표 이미지 검증
+        for (GiftImage image : savedImages) {
+            if (image.getImageUrl().equals("https://s3.example.com/image1.jpg") ||
+                    image.getImageUrl().equals("https://s3.example.com/chocolate1.jpg") ||
+                        image.getImageUrl().equals("https://s3.example.com/candyfirst.jpg")) {
+                assertThat(image.getIsPrimary()).isTrue(); // 첫 번째 이미지는 대표 이미지여야 함
+            } else {
+                assertThat(image.getIsPrimary()).isFalse(); // 나머지는 대표 이미지가 아니어야 함
+            }
+        }
+
+        // ✅ 콘솔 로그 확인
+        System.out.println("✅ 보따리 ID: " + response.getId());
+        System.out.println("✅ 선물 개수: " + savedGifts.size());
+        savedImages.forEach(img ->
+                System.out.println("✅ 저장된 이미지: " + img.getImageUrl() + " (대표: " + img.getIsPrimary() + ")")
+        );
+    }
 }
