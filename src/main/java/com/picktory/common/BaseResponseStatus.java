@@ -28,6 +28,7 @@ public enum BaseResponseStatus {
     INVALID_BUNDLE_STATUS(false, 400, "이미 배달이 시작된 보따리입니다."),
     INVALID_CHARACTER_TYPE(false, 400, "유효하지 않은 배달부 캐릭터입니다."),
     INVALID_LINK(false, 400, "유효하지 않은 배달 링크입니다."),
+    NOT_DELIVERED_YET(false, 400 ,"아직 배송 상태가 아닙니다" ),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
 
     /**
