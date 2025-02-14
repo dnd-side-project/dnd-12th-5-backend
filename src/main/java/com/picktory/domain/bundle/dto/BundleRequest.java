@@ -21,6 +21,4 @@ public class BundleRequest {
     @NotNull
     @Size(min = 2)
     private List<GiftRequest> gifts;
-
-    private DeliveryCharacterType deliveryCharacterType;
 }
