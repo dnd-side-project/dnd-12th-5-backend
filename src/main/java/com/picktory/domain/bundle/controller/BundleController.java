@@ -1,6 +1,7 @@
 package com.picktory.domain.bundle.controller;
 
 import com.picktory.common.BaseResponse;
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.dto.BundleUpdateRequest;
@@ -27,6 +28,7 @@ public class BundleController {
     }
 
     /**
+
      * 보따리 업데이트 API
      */
     @PutMapping("/{bundleId}")
@@ -38,3 +40,15 @@ public class BundleController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 }
+
+     * 배달부 캐릭터 설정 API
+     */
+    @PutMapping("/{id}/delivery")
+    public ResponseEntity<BundleResponse> updateDeliveryCharacter(
+            @PathVariable Long id,
+            @Valid @RequestBody BundleDeliveryRequest request
+    ) {
+        return ResponseEntity.ok(bundleService.updateDeliveryCharacter(id, request));
+    }
+}
+
