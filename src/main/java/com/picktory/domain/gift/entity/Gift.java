@@ -51,4 +51,8 @@ public class Gift {
                 .isResponsed(false)
                 .build();
     }
+    // 응답 상태 변경 메서드
+    public void setResponded(boolean responded) {
+        this.isResponsed = responded;
+    }
 }
