@@ -200,7 +200,7 @@ public class BundleService {
             // 각 giftRequest의 첫 번째 이미지가 대표 이미지(isPrimary=true)
             for (int j = 0; j < imageUrls.size(); j++) {
                 boolean isPrimary = (j == 0);
-                newImages.add(GiftImage.createGiftImage(gift.getId(), imageUrls.get(j), isPrimary));
+                newImages.add(GiftImage.createGiftImage(gift, imageUrls.get(j), isPrimary));
             }
         }
         return newImages;
