@@ -1,5 +1,6 @@
 package com.picktory.domain.bundle.controller;
 
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.service.BundleService;
@@ -30,7 +31,7 @@ public class BundleController {
     @PutMapping("/{id}/delivery")
     public ResponseEntity<BundleResponse> updateDeliveryCharacter(
             @PathVariable Long id,
-            @Valid @RequestBody BundleRequest request
+            @Valid @RequestBody BundleDeliveryRequest request
     ) {
         return ResponseEntity.ok(bundleService.updateDeliveryCharacter(id, request));
     }

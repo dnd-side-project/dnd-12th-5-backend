@@ -3,6 +3,7 @@ package com.picktory.domain.bundle.service;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.entity.Bundle;
@@ -111,7 +112,7 @@ public class BundleService {
     /**
      * 배달부 캐릭터 설정
      */
-    public BundleResponse updateDeliveryCharacter(Long bundleId, BundleRequest request) {
+    public BundleResponse updateDeliveryCharacter(Long bundleId, BundleDeliveryRequest request) {
         // 현재 로그인한 유저 가져오기
         User currentUser = authenticationService.getAuthenticatedUser();
 
@@ -125,7 +126,10 @@ public class BundleService {
         // 배달부 캐릭터 설정 및 링크 저장
         bundle.updateDeliveryCharacter(request.getDeliveryCharacterType(), link);
 
+        // 변경사항 DB에 저장
+        Bundle savedBundle = bundleRepository.save(bundle);
+
         // 변경된 보따리 정보 반환
-        return BundleResponse.fromEntity(bundle, null, null);
+        return BundleResponse.fromEntity(savedBundle, null, null);
     }
 }
