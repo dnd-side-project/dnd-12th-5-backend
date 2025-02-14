@@ -1,7 +1,14 @@
 package com.picktory.domain.bundle.controller;
 
 import com.picktory.common.BaseResponse;
+
 import com.picktory.domain.bundle.dto.*;
+
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
+import com.picktory.domain.bundle.dto.BundleRequest;
+import com.picktory.domain.bundle.dto.BundleResponse;
+import com.picktory.domain.bundle.dto.BundleUpdateRequest;
+
 import com.picktory.domain.bundle.service.BundleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +34,7 @@ public class BundleController {
     }
 
     /**
+
      * 보따리 업데이트 API
      */
     @PutMapping("/{bundleId}")
@@ -38,6 +46,7 @@ public class BundleController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
+
     /**
      * 보따리 목록 조회 API
      */
@@ -48,6 +57,7 @@ public class BundleController {
     }
 
     /**
+
      * 보따리 메인 목록 조회 API (최신 8개)
      */
     @GetMapping("/main")
@@ -57,6 +67,10 @@ public class BundleController {
     }
 
     /**
+
+}
+
+
      * 배달부 캐릭터 설정 API
      */
     @PutMapping("/{id}/delivery")
@@ -67,3 +81,4 @@ public class BundleController {
         return ResponseEntity.ok(bundleService.updateDeliveryCharacter(id, request));
     }
 }
+
