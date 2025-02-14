@@ -24,11 +24,14 @@ public enum BaseResponseStatus {
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
     BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 2개의 선물을 포함해야 합니다."),
 
+
+    BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
     BUNDLE_NOT_FOUND(false, 404, "보따리를 찾을 수 없습니다."),
     INVALID_BUNDLE_STATUS(false, 400, "이미 배달이 시작된 보따리입니다."),
     INVALID_CHARACTER_TYPE(false, 400, "유효하지 않은 배달부 캐릭터입니다."),
     INVALID_LINK(false, 400, "유효하지 않은 배달 링크입니다."),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
+
 
     /**
      * 500: Server 오류
