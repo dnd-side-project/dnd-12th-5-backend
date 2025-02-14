@@ -206,6 +206,14 @@ public class BundleService {
         return newImages;
     }
 
+    /**
+     * 사용자의 보따리 목록 조회
+     */
+    public List<BundleListResponse> getUserBundles() {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        List<Bundle> bundles = bundleRepository.findByUserIdOrderByUpdatedAtDesc(currentUser.getId());
+        return BundleListResponse.fromEntityList(bundles);
+    }
 
     /**
      * 배달부 캐릭터 설정
