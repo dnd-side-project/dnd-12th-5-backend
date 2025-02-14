@@ -3,6 +3,7 @@ package com.picktory.bundle.service;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.enums.DesignType;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -188,7 +190,7 @@ class BundleServiceTest {
     void updateDeliveryCharacter_성공() {
         // Given
         Long bundleId = 1L;
-        BundleRequest request = new BundleRequest();
+        BundleDeliveryRequest request = new BundleDeliveryRequest();
         request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
 
         Bundle mockBundle = Bundle.builder()
@@ -202,6 +204,8 @@ class BundleServiceTest {
 
         when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
                 .thenReturn(Optional.of(mockBundle));
+        when(bundleRepository.save(any(Bundle.class)))
+                .thenReturn(mockBundle);
 
         // When
         BundleResponse response = bundleService.updateDeliveryCharacter(bundleId, request);
@@ -209,8 +213,10 @@ class BundleServiceTest {
         // Then
         assertThat(response.getDeliveryCharacterType()).isEqualTo(DeliveryCharacterType.CHARACTER_1);
         assertThat(response.getStatus()).isEqualTo(BundleStatus.PUBLISHED);
-        assertThat(response.getLink()).isNotNull();  // 링크 생성 확인
-        assertThat(response.getLink()).startsWith("/delivery/");  // 링크 형식 확인
+        assertThat(response.getLink()).isNotNull();
+        assertThat(response.getLink()).startsWith("/delivery/");
+
+        verify(bundleRepository).save(any(Bundle.class));
     }
 
     @Test
@@ -218,7 +224,7 @@ class BundleServiceTest {
     void updateDeliveryCharacter_실패_보따리없음() {
         // Given
         Long bundleId = 999L;
-        BundleRequest request = new BundleRequest();
+        BundleDeliveryRequest request = new BundleDeliveryRequest();
         request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
 
         when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
@@ -230,13 +236,12 @@ class BundleServiceTest {
 
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_NOT_FOUND);
     }
-
     @Test
     @DisplayName("❌ 배달부 캐릭터 설정 실패 - 이미 배달 시작된 보따리")
     void updateDeliveryCharacter_실패_이미배달시작() {
         // Given
         Long bundleId = 1L;
-        BundleRequest request = new BundleRequest();
+        BundleDeliveryRequest request = new BundleDeliveryRequest(); // BundleRequest에서 BundleDeliveryRequest로 변경
         request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
 
         Bundle mockBundle = Bundle.builder()
