@@ -349,6 +349,15 @@ public class BundleService {
     }
 
     /**
+     * 사용자의 최신 8개 보따리 목록 조회
+     */
+    public List<BundleMainListResponse> getUserMainBundles() {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        List<Bundle> bundles = bundleRepository.findTop8ByUserIdOrderByUpdatedAtDesc(currentUser.getId());
+        return BundleMainListResponse.fromEntityList(bundles);
+    }
+
+    /**
      * 배달부 캐릭터 설정
      */
     public BundleResponse updateDeliveryCharacter(Long bundleId, BundleDeliveryRequest request) {

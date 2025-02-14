@@ -2,6 +2,7 @@ package com.picktory.bundle.controller;
 
 import com.picktory.domain.bundle.controller.BundleController;
 import com.picktory.domain.bundle.dto.BundleListResponse;
+import com.picktory.domain.bundle.dto.BundleMainListResponse;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DesignType;
 import com.picktory.domain.bundle.service.BundleService;
@@ -17,7 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -33,6 +36,7 @@ class BundleControllerTest {
     private BundleController bundleController;  // ✅ 컨트롤러에 Mock 객체 주입
 
     private List<BundleListResponse> mockBundles;
+    private List<BundleMainListResponse> mockMainBundles;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +58,15 @@ class BundleControllerTest {
                         .isRead(false)
                         .build()
         );
+        mockMainBundles = IntStream.range(1, 11)
+                .mapToObj(i -> BundleMainListResponse.builder()
+                        .id((long) i)
+                        .name("테스트 보따리 " + i)
+                        .designType(i % 2 == 0 ? DesignType.RED : DesignType.GREEN)
+                        .updatedAt(LocalDateTime.of(2024, 2, 15, 12, 0).minusDays(i)) // 날짜가 최신순
+                        .build())
+                .sorted(Comparator.comparing(BundleMainListResponse::getUpdatedAt).reversed()) // 최신순 정렬
+                .toList();
     }
 
     /**
@@ -82,6 +95,34 @@ class BundleControllerTest {
         assertThat(firstBundle.getIsRead()).isFalse();  // ✅ COMPLETED 상태의 isRead 초기값 검증
 
         verify(bundleService, times(1)).getUserBundles();
+    }
+
+    /**
+     * ✅ 보따리 메인 목록 조회 성공 테스트 (최신 8개만 반환)
+     */
+    @Test
+    void 보따리_메인_목록_조회_성공() {
+        // Given
+        when(bundleService.getUserMainBundles()).thenReturn(mockMainBundles.subList(0, 8)); // 8개만 반환
+
+        // When
+        ResponseEntity<BaseResponse<List<BundleMainListResponse>>> response = bundleController.getMainBundles();
+
+        // Then
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getResult()).hasSize(8); // ✅ 최신 8개만 반환되는지 확인
+
+        // ✅ 응답 필드 검증 (최신 순서)
+        List<BundleMainListResponse> resultBundles = response.getBody().getResult();
+        for (int i = 0; i < resultBundles.size(); i++) {
+            assertThat(resultBundles.get(i).getId()).isEqualTo(mockMainBundles.get(i).getId());
+            assertThat(resultBundles.get(i).getName()).isEqualTo(mockMainBundles.get(i).getName());
+            assertThat(resultBundles.get(i).getDesignType()).isEqualTo(mockMainBundles.get(i).getDesignType());
+            assertThat(resultBundles.get(i).getUpdatedAt()).isEqualTo(mockMainBundles.get(i).getUpdatedAt());
+        }
+
+        verify(bundleService, times(1)).getUserMainBundles();
     }
 
     /**

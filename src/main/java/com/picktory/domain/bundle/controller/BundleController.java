@@ -58,6 +58,16 @@ public class BundleController {
 
     /**
 
+     * 보따리 메인 목록 조회 API (최신 8개)
+     */
+    @GetMapping("/main")
+    public ResponseEntity<BaseResponse<List<BundleMainListResponse>>> getMainBundles() {
+        List<BundleMainListResponse> bundles = bundleService.getUserMainBundles();
+        return ResponseEntity.ok(new BaseResponse<>(bundles));
+    }
+
+    /**
+
 }
 
 
