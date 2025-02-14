@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
     List<GiftImage> findByGiftId(Long giftId);
+    List<GiftImage> findByGiftIdIn(List<Long> giftIds);
 }
