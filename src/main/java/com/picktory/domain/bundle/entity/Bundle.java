@@ -1,11 +1,14 @@
 package com.picktory.domain.bundle.entity;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.bundle.enums.DesignType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "bundles")
@@ -33,7 +36,7 @@ public class Bundle {
     @Column(nullable = true) // NULL 허용
     private DeliveryCharacterType deliveryCharacterType;
 
-    @Column(length = 255)
+    @Column(nullable = false, unique = true)
     private String link; // 배달용 링크 (없으면 PUBLISHED 불가)
 
     @Enumerated(EnumType.STRING)
@@ -54,11 +57,33 @@ public class Bundle {
     private Boolean isRead = false; // 응답 확인 여부 (기본값: false)
 
     /**
+     * 배달부 캐릭터 설정
+     */
+    public void updateDeliveryCharacter(DeliveryCharacterType type, String link) {
+        validateDraftStatus();
+        validateDeliveryCharacter(type);
+
+        this.deliveryCharacterType = type;
+        this.link = link;
+        this.status = BundleStatus.PUBLISHED;
+        this.publishedAt = LocalDateTime.now();
+    }
+
+    /**
+     * DRAFT 상태 검증
+     */
+    private void validateDraftStatus() {
+        if (this.status != BundleStatus.DRAFT) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
+        }
+    }
+
+    /**
      * 보따리 배달 완료 후, 배달 정보가 설정되었을 때 PUBLISHED 상태로 변경
      */
     public void publish(String link, DeliveryCharacterType characterType) {
         if (link == null || link.isEmpty()) {
-            throw new IllegalStateException("배달 링크가 설정되지 않았습니다.");
+            throw new BaseException(BaseResponseStatus.INVALID_CHARACTER_TYPE);
         }
         this.link = link;
         this.deliveryCharacterType = characterType;
@@ -71,7 +96,7 @@ public class Bundle {
      */
     public void complete() {
         if (this.status != BundleStatus.PUBLISHED) {
-            throw new IllegalStateException("PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다.");
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_COMPLETE);
         }
         this.status = BundleStatus.COMPLETED;
     }
@@ -82,6 +107,11 @@ public class Bundle {
     public void markAsRead() {
         if (this.status == BundleStatus.COMPLETED && this.isRead == Boolean.FALSE) {
             this.isRead = true;
+        }
+    }
+    private void validateDeliveryCharacter(DeliveryCharacterType type) {
+        if (type == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_CHARACTER_TYPE);
         }
     }
 }

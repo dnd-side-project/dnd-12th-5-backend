@@ -3,6 +3,7 @@ package com.picktory.bundle.service;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.enums.DesignType;
@@ -10,6 +11,7 @@ import com.picktory.domain.bundle.service.BundleService;
 import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.enums.BundleStatus;
+import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -30,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -180,5 +184,84 @@ class BundleServiceTest {
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
+    }
+    @Test
+    @DisplayName("✅ 배달부 캐릭터 설정 성공")
+    void updateDeliveryCharacter_성공() {
+        // Given
+        Long bundleId = 1L;
+        BundleDeliveryRequest request = new BundleDeliveryRequest();
+        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .name("Test Bundle")
+                .designType(DesignType.RED)
+                .status(BundleStatus.DRAFT)
+                .isRead(false)
+                .build();
+
+        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+                .thenReturn(Optional.of(mockBundle));
+        when(bundleRepository.save(any(Bundle.class)))
+                .thenReturn(mockBundle);
+
+        // When
+        BundleResponse response = bundleService.updateDeliveryCharacter(bundleId, request);
+
+        // Then
+        assertThat(response.getDeliveryCharacterType()).isEqualTo(DeliveryCharacterType.CHARACTER_1);
+        assertThat(response.getStatus()).isEqualTo(BundleStatus.PUBLISHED);
+        assertThat(response.getLink()).isNotNull();
+        assertThat(response.getLink()).startsWith("/delivery/");
+
+        verify(bundleRepository).save(any(Bundle.class));
+    }
+
+    @Test
+    @DisplayName("❌ 배달부 캐릭터 설정 실패 - 보따리를 찾을 수 없음")
+    void updateDeliveryCharacter_실패_보따리없음() {
+        // Given
+        Long bundleId = 999L;
+        BundleDeliveryRequest request = new BundleDeliveryRequest();
+        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+
+        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.updateDeliveryCharacter(bundleId, request));
+
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_NOT_FOUND);
+    }
+    @Test
+    @DisplayName("❌ 배달부 캐릭터 설정 실패 - 이미 배달 시작된 보따리")
+    void updateDeliveryCharacter_실패_이미배달시작() {
+        // Given
+        Long bundleId = 1L;
+        BundleDeliveryRequest request = new BundleDeliveryRequest(); // BundleRequest에서 BundleDeliveryRequest로 변경
+        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .name("Test Bundle")
+                .designType(DesignType.RED)
+                .status(BundleStatus.PUBLISHED) // 이미 PUBLISHED 상태
+                .deliveryCharacterType(DeliveryCharacterType.CHARACTER_2)
+                .link("/delivery/existing-link")
+                .isRead(false)
+                .build();
+
+        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+                .thenReturn(Optional.of(mockBundle));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.updateDeliveryCharacter(bundleId, request));
+
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_BUNDLE_STATUS);
     }
 }

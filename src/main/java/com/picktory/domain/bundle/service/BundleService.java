@@ -3,6 +3,7 @@ package com.picktory.domain.bundle.service;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
+import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.entity.Bundle;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -105,5 +107,29 @@ public class BundleService {
             // 프론트에서 필요한 응답 확인 후 축소 가능
             //
         return BundleResponse.fromEntity(bundle, savedGifts, savedGiftImages);
+    }
+
+    /**
+     * 배달부 캐릭터 설정
+     */
+    public BundleResponse updateDeliveryCharacter(Long bundleId, BundleDeliveryRequest request) {
+        // 현재 로그인한 유저 가져오기
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 조회
+        Bundle bundle = bundleRepository.findByIdAndUserId(bundleId, currentUser.getId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+
+        // 배달 링크 생성 (UUID로 고유성 보장)
+        String link = "/delivery/" + UUID.randomUUID().toString();
+
+        // 배달부 캐릭터 설정 및 링크 저장
+        bundle.updateDeliveryCharacter(request.getDeliveryCharacterType(), link);
+
+        // 변경사항 DB에 저장
+        Bundle savedBundle = bundleRepository.save(bundle);
+
+        // 변경된 보따리 정보 반환
+        return BundleResponse.fromEntity(savedBundle, null, null);
     }
 }
