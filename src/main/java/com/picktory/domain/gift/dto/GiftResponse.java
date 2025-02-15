@@ -5,11 +5,13 @@ import com.picktory.domain.gift.entity.GiftImage;
 import com.picktory.domain.gift.enums.GiftResponseTag;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Setter
 @Getter
 @Builder
 public class GiftResponse {

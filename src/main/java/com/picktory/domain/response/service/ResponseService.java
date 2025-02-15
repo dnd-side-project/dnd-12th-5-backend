@@ -6,16 +6,20 @@ import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
+import com.picktory.domain.gift.enums.GiftResponseTag;
 import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
+import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.response.dto.ResponseBundleDto;
+import com.picktory.domain.response.dto.SaveGiftResponsesRequest;
+import com.picktory.domain.response.dto.SaveGiftResponsesResponse;
 import com.picktory.domain.response.entity.Response;
-import com.picktory.domain.response.entity.ResponseTag;
 import com.picktory.domain.response.repository.ResponseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,10 +45,91 @@ public class ResponseService {
     }
 
     @Transactional
-    public void createResponse(Long giftId, Long bundleId, ResponseTag responseTag, String message) {
-        validateResponseNotExists(giftId);
-        Response response = buildResponse(giftId, bundleId, responseTag, message);
-        responseRepository.save(response);
+    public SaveGiftResponsesResponse saveGiftResponses(String link, SaveGiftResponsesRequest request) {
+        // 1. 번들 검증 및 조회
+        Bundle bundle = validateAndGetBundle(link);
+
+        // 2. 선물 목록 검증 및 조회
+        List<Gift> gifts = validateAndGetGifts(bundle.getId(), request.getGifts());
+
+        // 3. 기존 응답 없음 검증
+        validateNoExistingResponses(gifts);
+
+        // 4. 모든 선물에 대한 응답 여부 검증
+        validateAllGiftsResponded(gifts, request.getGifts());
+
+        // 5. 응답 저장
+        saveResponses(bundle.getId(), request.getGifts());
+
+        // 6. 번들 상태를 완료로 변경
+        bundle.complete();
+        bundleRepository.save(bundle);
+
+        return SaveGiftResponsesResponse.of(request.getGifts().size(), gifts.size());
+    }
+
+    private Bundle validateAndGetBundle(String link) {
+        Bundle bundle = findBundleByLink(link);
+
+        if (bundle.getStatus() == BundleStatus.COMPLETED) {
+            throw new BaseException(BaseResponseStatus.ALREADY_ANSWERED);
+        }
+
+        return bundle;
+    }
+
+    private List<Gift> validateAndGetGifts(Long bundleId, List<SaveGiftResponsesRequest.GiftResponse> giftResponses) {
+        Set<Long> requestGiftIds = giftResponses.stream()
+                .map(SaveGiftResponsesRequest.GiftResponse::getGiftId)
+                .collect(Collectors.toSet());
+
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+
+        Set<Long> existingGiftIds = gifts.stream()
+                .map(Gift::getId)
+                .collect(Collectors.toSet());
+
+        if (!existingGiftIds.containsAll(requestGiftIds)) {
+            throw new BaseException(BaseResponseStatus.INVALID_GIFT_ID);
+        }
+
+        return gifts;
+    }
+
+    private void validateNoExistingResponses(List<Gift> gifts) {
+        List<Long> giftIds = gifts.stream()
+                .map(Gift::getId)
+                .collect(Collectors.toList());
+
+        if (responseRepository.existsByGiftIdIn(giftIds)) {
+            throw new BaseException(BaseResponseStatus.ALREADY_ANSWERED);
+        }
+    }
+
+    private void validateAllGiftsResponded(List<Gift> gifts, List<SaveGiftResponsesRequest.GiftResponse> responses) {
+        if (gifts.size() != responses.size()) {
+            throw new BaseException(BaseResponseStatus.INCOMPLETE_RESPONSES);
+        }
+    }
+
+    private void saveResponses(Long bundleId, List<SaveGiftResponsesRequest.GiftResponse> giftResponses) {
+        List<Response> responses = giftResponses.stream()
+                .map(giftResponse -> Response.builder()
+                        .giftId(giftResponse.getGiftId())
+                        .bundleId(bundleId)
+                        .responseTag(validateAndParseResponseTag(giftResponse.getResponseTag()))
+                        .build())
+                .collect(Collectors.toList());
+
+        responseRepository.saveAll(responses);
+    }
+
+    private GiftResponseTag validateAndParseResponseTag(String responseTag) {
+        try {
+            return GiftResponseTag.valueOf(responseTag);
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(BaseResponseStatus.INVALID_RESPONSE_TYPE);
+        }
     }
 
     private Bundle findBundleByLink(String link) {
@@ -80,21 +165,6 @@ public class ResponseService {
             case PUBLISHED -> { /* 정상 처리 */ }
             default -> throw new BaseException(BaseResponseStatus.INVALID_LINK);
         }
-    }
-
-    private void validateResponseNotExists(Long giftId) {
-        if (responseRepository.existsByGiftId(giftId)) {
-            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
-        }
-    }
-
-    private Response buildResponse(Long giftId, Long bundleId, ResponseTag responseTag, String message) {
-        return Response.builder()
-                .giftId(giftId)
-                .bundleId(bundleId)
-                .responseTag(responseTag)
-                .message(message)
-                .build();
     }
 
     private void updateGiftResponseStatus(List<Gift> gifts, List<Response> responses) {
