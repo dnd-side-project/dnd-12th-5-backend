@@ -25,7 +25,6 @@ public enum BaseResponseStatus {
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
     BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 2개의 선물을 포함해야 합니다."),
 
-
     BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
     BUNDLE_NOT_FOUND(false, 404, "보따리를 찾을 수 없습니다."),
     INVALID_BUNDLE_STATUS(false, 400, "이미 배달이 시작된 보따리입니다."),
@@ -34,7 +33,13 @@ public enum BaseResponseStatus {
     NOT_DELIVERED_YET(false, 400 ,"아직 배송 상태가 아닙니다" ),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
 
-
+    /**
+     * 400: Gift Response 관련 오류
+     */
+    ALREADY_ANSWERED(false, 400, "이미 답변이 완료된 보따리입니다."),
+    INCOMPLETE_RESPONSES(false, 400, "모든 선물에 대한 답변이 필요합니다."),
+    INVALID_RESPONSE_TYPE(false, 400, "잘못된 응답 타입입니다."),
+    INVALID_GIFT_ID(false, 400, "존재하지 않는 선물입니다."),
 
     /**
      * 500: Server 오류
@@ -43,6 +48,7 @@ public enum BaseResponseStatus {
     SERVER_ERROR(false, 500, "서버와의 연결에 실패하였습니다."),
     KAKAO_API_ERROR(false, 502, "카카오 API 호출 중 오류가 발생했습니다."),
     INTERNAL_SERVER_ERROR(false, 500, "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+
     private final boolean isSuccess;
     private final int code;
     private final String message;
