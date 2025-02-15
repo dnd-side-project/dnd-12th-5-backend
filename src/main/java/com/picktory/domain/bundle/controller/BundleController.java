@@ -80,5 +80,14 @@ public class BundleController {
     ) {
         return ResponseEntity.ok(bundleService.updateDeliveryCharacter(id, request));
     }
+
+    /**
+     * 보따리 삭제 API
+     */
+    @DeleteMapping("/{bundleId}")
+    public ResponseEntity<Void> deleteBundle(@PathVariable Long bundleId) {
+        bundleService.deleteBundle(bundleId);
+        return ResponseEntity.noContent().build(); // 204
+    }
 }
 
