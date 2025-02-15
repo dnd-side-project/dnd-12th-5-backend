@@ -24,20 +24,20 @@ public class Gift {
     private Long bundleId;
 
     @Column(nullable = false, length = 100)
-    private String name; // 선물명
+    private String name;
 
     @Column(columnDefinition = "TEXT")
-    private String message; // 선물에 첨부할 메시지
+    private String message;
 
     @Column(columnDefinition = "TEXT")
-    private String purchaseUrl; // 구매 링크
+    private String purchaseUrl;
 
     @Enumerated(EnumType.STRING)
-    private GiftResponseTag responseTag; // 선물 응답 타입
+    private GiftResponseTag responseTag;
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isResponsed = false; // 응답 여부
+    private Boolean isResponsed = false;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -61,13 +61,12 @@ public class Gift {
     // 응답 상태 변경 메서드
     public void setResponded(boolean responded) {
         this.isResponsed = responded;
-
+    }
 
     // 기존 선물 정보 업데이트
     public void updateGift(GiftUpdateRequest request) {
         this.name = request.getName();
         this.message = request.getMessage();
         this.purchaseUrl = request.getPurchaseUrl();
-
     }
 }
