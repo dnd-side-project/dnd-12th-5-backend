@@ -1,27 +1,22 @@
 package com.picktory.domain.gift.dto;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class GiftRequest implements GiftImageRequest {
-    @NotNull
-    private String name;
-
-    private String message;
-    private String purchaseUrl;
-    private List<String> imageUrls;
+public class GiftRequest extends AbstractGiftRequest {
+    @Builder
+    public GiftRequest(String name, String message, String purchaseUrl, List<String> imageUrls) {
+        this.setName(name);
+        this.setMessage(message);
+        this.setPurchaseUrl(purchaseUrl);
+        this.setImageUrls(imageUrls);
+    }
 
     @Override
     public Long getId() {
-        return null; // GiftRequest는 최초 생성이므로 ID가 없음
+        return null; // GiftRequest는 새 선물 생성이므로 ID가 필요 없음
     }
 }

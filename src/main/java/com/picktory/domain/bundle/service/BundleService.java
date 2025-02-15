@@ -118,10 +118,11 @@ public class BundleService {
 
         for (GiftUpdateRequest giftUpdateRequest : request.getGifts()) {
             if (giftUpdateRequest.getId() != null && existingGiftMap.containsKey(giftUpdateRequest.getId())) {
-                Gift existingGift = existingGiftMap.get(giftUpdateRequest.getId());
-                existingGift.updateGift(giftUpdateRequest);
+                // 기존 선물 업데이트
+                Gift existingGift = Gift.updateGift(existingGiftMap.get(giftUpdateRequest.getId()), giftUpdateRequest);
                 updatedGifts.add(existingGift);
             } else {
+                // 새 선물 추가
                 newGifts.add(Gift.createGift(bundle.getId(), giftUpdateRequest));
             }
         }

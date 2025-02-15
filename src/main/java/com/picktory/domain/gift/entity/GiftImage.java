@@ -42,4 +42,13 @@ public class GiftImage {
     public void setPrimary(boolean isPrimary) {
         this.isPrimary = isPrimary;
     }
+    public Long getGiftId() {
+        return this.gift.getId();
+    }
+    public static class GiftImageBuilder {
+        public GiftImageBuilder giftId(Long giftId) {
+            this.gift = Gift.builder().id(giftId).build();
+            return this;
+        }
+    }
 }

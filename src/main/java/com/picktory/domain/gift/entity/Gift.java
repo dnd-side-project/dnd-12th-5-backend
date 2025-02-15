@@ -1,5 +1,6 @@
 package com.picktory.domain.gift.entity;
 
+import com.picktory.domain.gift.dto.AbstractGiftRequest;
 import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.dto.GiftUpdateRequest;
 import com.picktory.domain.gift.enums.GiftResponseTag;
@@ -47,7 +48,7 @@ public class Gift {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Gift createGift(Long bundleId, GiftRequest request) {
+    public static Gift createGift(Long bundleId, AbstractGiftRequest request) {
         return Gift.builder()
                 .bundleId(bundleId)
                 .name(request.getName())
@@ -58,11 +59,19 @@ public class Gift {
                 .build();
     }
 
+    public static Gift updateGift(Gift existingGift, GiftUpdateRequest request) {
+        existingGift.name = request.getName();
+        existingGift.message = request.getMessage();
+        existingGift.purchaseUrl = request.getPurchaseUrl();
+        return existingGift;
+    }
+
+
     // 응답 상태 변경 메서드
     public void setResponded(boolean responded) {
         this.isResponsed = responded;
 
-
+}
     // 기존 선물 정보 업데이트
     public void updateGift(GiftUpdateRequest request) {
         this.name = request.getName();
