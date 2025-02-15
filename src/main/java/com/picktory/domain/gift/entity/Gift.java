@@ -1,6 +1,7 @@
 package com.picktory.domain.gift.entity;
 
 import com.picktory.domain.gift.dto.GiftRequest;
+import com.picktory.domain.gift.dto.GiftUpdateRequest;
 import com.picktory.domain.gift.enums.GiftResponseTag;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,8 +39,13 @@ public class Gift {
     @Builder.Default
     private Boolean isResponsed = false; // 응답 여부
 
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     public static Gift createGift(Long bundleId, GiftRequest request) {
         return Gift.builder()
@@ -51,8 +57,17 @@ public class Gift {
                 .isResponsed(false)
                 .build();
     }
+
     // 응답 상태 변경 메서드
     public void setResponded(boolean responded) {
         this.isResponsed = responded;
+
+
+    // 기존 선물 정보 업데이트
+    public void updateGift(GiftUpdateRequest request) {
+        this.name = request.getName();
+        this.message = request.getMessage();
+        this.purchaseUrl = request.getPurchaseUrl();
+
     }
 }
