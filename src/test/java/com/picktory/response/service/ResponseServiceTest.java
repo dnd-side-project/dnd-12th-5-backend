@@ -76,61 +76,59 @@ class ResponseServiceTest {
                 .build();
     }
 
-    private GiftImage createTestGiftImage(Long giftId, boolean isPrimary) {
+    private GiftImage createTestGiftImage(Gift gift, boolean isPrimary) {
         return GiftImage.builder()
                 .id(1L)
-                .giftId(giftId)
+                .gift(gift)                                 // Gift 엔티티 설정
                 .imageUrl("http://example.com/image.jpg")
                 .isPrimary(isPrimary)
                 .uploadedAt(LocalDateTime.now())
                 .build();
     }
 
-    @Nested
-    @DisplayName("선물 보따리 조회")
-    class GetBundle {
+    @Test
+    @DisplayName("PUBLISHED 상태의 보따리를 정상적으로 조회할 수 있다")
+    void success() {
+        // given
+        String link = "valid-link";
+        Bundle bundle = createTestBundle(1L, link, BundleStatus.PUBLISHED);
+        Gift gift = createTestGift(1L, bundle.getId());
+        GiftImage thumbnail = createTestGiftImage(gift, true);
+        GiftImage additionalImage = createTestGiftImage(gift, false);
+        List<Response> responses = List.of();
 
-        @Test
-        @DisplayName("PUBLISHED 상태의 보따리를 정상적으로 조회할 수 있다")
-        void success() {
-            // given
-            String link = "valid-link";
-            Bundle bundle = createTestBundle(1L, link, BundleStatus.PUBLISHED);
-            Gift gift = createTestGift(1L, bundle.getId());
-            GiftImage thumbnail = createTestGiftImage(gift.getId(), true);
-            GiftImage additionalImage = createTestGiftImage(gift.getId(), false);
-            List<Response> responses = List.of();
+        when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
+        when(giftRepository.findByBundleId(bundle.getId())).thenReturn(List.of(gift));
+        when(giftImageRepository.findByGiftIdIn(List.of(gift.getId())))  // gift.getId()를 사용
+                .thenReturn(List.of(thumbnail, additionalImage));
+        when(responseRepository.findAllByBundleIdAndGiftIds(anyLong(), any()))
+                .thenReturn(responses);
 
-            when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
-            when(giftRepository.findByBundleId(bundle.getId())).thenReturn(List.of(gift));
-            when(giftImageRepository.findByGiftIdIn(any())).thenReturn(List.of(thumbnail, additionalImage));
-            when(responseRepository.findAllByBundleIdAndGiftIds(anyLong(), any())).thenReturn(responses);
+        // when
+        ResponseBundleDto result = responseService.getBundleByLink(link);
 
-            // when
-            ResponseBundleDto result = responseService.getBundleByLink(link);
+        // then
+        assertThat(result.getBundle()).satisfies(bundleInfo -> {
+            assertThat(bundleInfo.getDelivery_character_type())
+                    .isEqualTo(DeliveryCharacterType.CHARACTER_1.name());
+            assertThat(bundleInfo.getStatus())
+                    .isEqualTo(BundleStatus.PUBLISHED.name());
+            assertThat(bundleInfo.getTotal_gifts()).isEqualTo(1);
+            assertThat(bundleInfo.getGifts()).hasSize(1)
+                    .first()
+                    .satisfies(giftInfo -> {
+                        assertThat(giftInfo.getId()).isEqualTo(gift.getId());
+                        assertThat(giftInfo.getMessage()).isNull();
+                        assertThat(giftInfo.getThumbnail()).isNotNull();
+                        assertThat(giftInfo.getImageUrls()).hasSize(1);
+                    });
+        });
 
-            // then
-            assertThat(result.getBundle()).satisfies(bundleInfo -> {
-                assertThat(bundleInfo.getDelivery_character_type())
-                        .isEqualTo(DeliveryCharacterType.CHARACTER_1.name());
-                assertThat(bundleInfo.getStatus())
-                        .isEqualTo(BundleStatus.PUBLISHED.name());
-                assertThat(bundleInfo.getTotal_gifts()).isEqualTo(1);
-                assertThat(bundleInfo.getGifts()).hasSize(1)
-                        .first()
-                        .satisfies(giftInfo -> {
-                            assertThat(giftInfo.getId()).isEqualTo(gift.getId());
-                            assertThat(giftInfo.getMessage()).isNull();
-                            assertThat(giftInfo.getThumbnail()).isNotNull();
-                            assertThat(giftInfo.getImageUrls()).hasSize(1);
-                        });
-            });
-
-            verify(bundleRepository).findByLink(link);
-            verify(giftRepository).findByBundleId(bundle.getId());
-            verify(giftImageRepository).findByGiftIdIn(any());
-            verify(responseRepository).findAllByBundleIdAndGiftIds(anyLong(), any());
-        }
+        verify(bundleRepository).findByLink(link);
+        verify(giftRepository).findByBundleId(bundle.getId());
+        verify(giftImageRepository).findByGiftIdIn(any());
+        verify(responseRepository).findAllByBundleIdAndGiftIds(anyLong(), any());
+    }
 
         @Test
         @DisplayName("존재하지 않는 링크로 조회시 예외가 발생한다")
@@ -159,4 +157,3 @@ class ResponseServiceTest {
                     .hasFieldOrPropertyWithValue("status", BaseResponseStatus.INVALID_BUNDLE_STATUS);
         }
     }
-}
