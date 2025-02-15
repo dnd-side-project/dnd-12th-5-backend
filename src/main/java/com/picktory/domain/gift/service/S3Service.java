@@ -70,13 +70,13 @@ public class S3Service {
         // Presigned URL 생성
         PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(
                 PutObjectPresignRequest.builder()
-                        .signatureDuration(Duration.ofMinutes(20)) // 20분간 유효
+                        .signatureDuration(Duration.ofHours(24)) // 24시간 유효
                         .putObjectRequest(objectRequest)
                         .build()
         );
 
         log.info("Presigned URL 생성 완료 - 파일명: {}", fileName);
 
-        return new PresignedUrlResponse(presignedRequest.url().toString(), 1200);
+        return new PresignedUrlResponse(presignedRequest.url().toString(), 86400);
     }
 }
