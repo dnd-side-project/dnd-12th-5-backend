@@ -35,7 +35,7 @@ public class ResponseBundleDto {
         List<GiftInfo> giftInfos = gifts.stream()
                 .map(gift -> {
                     List<GiftImage> giftImages = images.stream()
-                            .filter(img -> img.getGiftId().equals(gift.getId()))
+                            .filter(img -> img.getGift().getId().equals(gift.getId()))
                             .collect(Collectors.toList());
 
                     return GiftInfo.builder()
