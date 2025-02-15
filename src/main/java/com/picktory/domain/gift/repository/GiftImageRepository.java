@@ -11,6 +11,9 @@ import java.util.List;
 public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
     List<GiftImage> findByGiftId(Long giftId);
 
+    List<GiftImage> findByGiftIdIn(List<Long> giftIds);
+}
+
     @Modifying
     @Query("DELETE FROM GiftImage gi WHERE gi.gift.id IN :giftIds")
     void deleteByGiftIds(@Param("giftIds") List<Long> giftIds);

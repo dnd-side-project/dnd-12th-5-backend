@@ -26,6 +26,7 @@ repositories {
 
 ext {
     set('snippetsDir', file("build/generated-snippets"))
+    set('queryDslVersion', '5.0.0')
 }
 
 dependencies {
@@ -43,10 +44,12 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
     // QueryDSL
-    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
-    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    implementation "com.querydsl:querydsl-jpa:${queryDslVersion}:jakarta"
+    annotationProcessor(
+            "com.querydsl:querydsl-apt:${queryDslVersion}:jakarta",
+            "jakarta.annotation:jakarta.annotation-api",
+            "jakarta.persistence:jakarta.persistence-api"
+    )
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -72,11 +75,16 @@ tasks.named('asciidoctor') {
     dependsOn test
 }
 
-// QueryDSL 제거하고 빌드 테스트
+def querydslDir = "$buildDir/generated/querydsl"
+
 sourceSets {
-    main {
-        java {
-            srcDirs = ["src/main/java"]
-        }
-    }
+    main.java.srcDirs += [ querydslDir ]
+}
+
+tasks.withType(JavaCompile) {
+    options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+}
+
+clean {
+    delete file(querydslDir)
 }

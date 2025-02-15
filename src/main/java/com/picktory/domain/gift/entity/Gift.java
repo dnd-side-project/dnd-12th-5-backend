@@ -58,16 +58,9 @@ public class Gift {
                 .build();
     }
 
-    public static Gift createGift(Long bundleId, GiftUpdateRequest request) {
-        return Gift.builder()
-                .bundleId(bundleId)
-                .name(request.getName())
-                .message(request.getMessage())
-                .purchaseUrl(request.getPurchaseUrl())
-                .responseTag(null)
-                .isResponsed(false)
-                .build();
-    }
+    // 응답 상태 변경 메서드
+    public void setResponded(boolean responded) {
+        this.isResponsed = responded;
 
 
     // 기존 선물 정보 업데이트
@@ -75,5 +68,6 @@ public class Gift {
         this.name = request.getName();
         this.message = request.getMessage();
         this.purchaseUrl = request.getPurchaseUrl();
+
     }
 }
