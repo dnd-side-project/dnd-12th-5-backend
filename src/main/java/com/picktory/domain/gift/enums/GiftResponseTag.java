@@ -7,4 +7,3 @@ public enum GiftResponseTag {
     NOT_SURE,
     NOT_MY_STYLE
 }
-

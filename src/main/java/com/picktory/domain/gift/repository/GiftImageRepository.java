@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
 //    List<GiftImage> findByGiftId(Long giftId);
@@ -21,4 +22,9 @@ public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
     @Modifying
     @Query("DELETE FROM GiftImage gi WHERE gi.gift.id IN :giftIds")
     void deleteByGiftIds(@Param("giftIds") List<Long> giftIds);
+
+    // 특정 선물의 대표 이미지(`isPrimary = true`) 조회
+    @Query("SELECT gi FROM GiftImage gi WHERE gi.gift.id = :giftId AND gi.isPrimary = true")
+    Optional<GiftImage> findPrimaryImageByGiftId(@Param("giftId") Long giftId);
+
 }
