@@ -1,6 +1,7 @@
 package com.picktory.domain.response.entity;
 
 import com.picktory.common.BaseEntity;
+import com.picktory.domain.gift.enums.GiftResponseTag;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,7 +24,7 @@ public class Response extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "response_tag", nullable = false)
-    private ResponseTag responseTag;
+    private GiftResponseTag responseTag;
 
     @Column(columnDefinition = "TEXT")
     private String message;
