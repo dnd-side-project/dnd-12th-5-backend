@@ -180,7 +180,7 @@ class BundleServiceTest {
         BundleRequest request = new BundleRequest();
         request.setName("Test Bundle");
         request.setDesignType(DesignType.RED);
-        request.setGifts(Collections.singletonList(new GiftRequest())); // 1개만 추가
+        request.setGifts(Collections.singletonList(new GiftRequest()));
 
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> bundleService.createBundle(request));
@@ -191,19 +191,18 @@ class BundleServiceTest {
     void updateDeliveryCharacter_성공() {
         // Given
         Long bundleId = 1L;
-        BundleDeliveryRequest request = new BundleDeliveryRequest();
-        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+        BundleDeliveryRequest request = new BundleDeliveryRequest(DeliveryCharacterType.CHARACTER_1);
 
         Bundle mockBundle = Bundle.builder()
                 .id(bundleId)
                 .userId(mockUser.getId())
                 .name("Test Bundle")
                 .designType(DesignType.RED)
-                .status(BundleStatus.DRAFT)
+                .status(BundleStatus.DRAFT)  // DRAFT 상태여야 함
                 .isRead(false)
                 .build();
 
-        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+        when(bundleRepository.findById(bundleId))
                 .thenReturn(Optional.of(mockBundle));
         when(bundleRepository.save(any(Bundle.class)))
                 .thenReturn(mockBundle);
@@ -212,11 +211,12 @@ class BundleServiceTest {
         BundleResponse response = bundleService.updateDeliveryCharacter(bundleId, request);
 
         // Then
+        assertThat(response).isNotNull();
         assertThat(response.getDeliveryCharacterType()).isEqualTo(DeliveryCharacterType.CHARACTER_1);
         assertThat(response.getStatus()).isEqualTo(BundleStatus.PUBLISHED);
-        assertThat(response.getLink()).isNotNull();
         assertThat(response.getLink()).startsWith("/delivery/");
 
+        verify(bundleRepository).findById(bundleId);
         verify(bundleRepository).save(any(Bundle.class));
     }
 
@@ -225,10 +225,9 @@ class BundleServiceTest {
     void updateDeliveryCharacter_실패_보따리없음() {
         // Given
         Long bundleId = 999L;
-        BundleDeliveryRequest request = new BundleDeliveryRequest();
-        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+        BundleDeliveryRequest request = new BundleDeliveryRequest(DeliveryCharacterType.CHARACTER_1);
 
-        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+        when(bundleRepository.findById(bundleId))
                 .thenReturn(Optional.empty());
 
         // When & Then
@@ -236,27 +235,27 @@ class BundleServiceTest {
                 () -> bundleService.updateDeliveryCharacter(bundleId, request));
 
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_NOT_FOUND);
+        verify(bundleRepository).findById(bundleId);
     }
     @Test
     @DisplayName("❌ 배달부 캐릭터 설정 실패 - 이미 배달 시작된 보따리")
     void updateDeliveryCharacter_실패_이미배달시작() {
         // Given
         Long bundleId = 1L;
-        BundleDeliveryRequest request = new BundleDeliveryRequest(); // BundleRequest에서 BundleDeliveryRequest로 변경
-        request.setDeliveryCharacterType(DeliveryCharacterType.CHARACTER_1);
+        BundleDeliveryRequest request = new BundleDeliveryRequest(DeliveryCharacterType.CHARACTER_1);
 
         Bundle mockBundle = Bundle.builder()
                 .id(bundleId)
                 .userId(mockUser.getId())
                 .name("Test Bundle")
                 .designType(DesignType.RED)
-                .status(BundleStatus.PUBLISHED) // 이미 PUBLISHED 상태
+                .status(BundleStatus.PUBLISHED)  // 이미 PUBLISHED 상태
                 .deliveryCharacterType(DeliveryCharacterType.CHARACTER_2)
                 .link("/delivery/existing-link")
                 .isRead(false)
                 .build();
 
-        when(bundleRepository.findByIdAndUserId(bundleId, mockUser.getId()))
+        when(bundleRepository.findById(bundleId))
                 .thenReturn(Optional.of(mockBundle));
 
         // When & Then
@@ -264,5 +263,6 @@ class BundleServiceTest {
                 () -> bundleService.updateDeliveryCharacter(bundleId, request));
 
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_BUNDLE_STATUS);
+        verify(bundleRepository).findById(bundleId);
     }
 }
