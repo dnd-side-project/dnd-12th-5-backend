@@ -122,7 +122,13 @@ public class BundleService {
                 existingGift.updateGift(giftUpdateRequest);
                 updatedGifts.add(existingGift);
             } else {
-                newGifts.add(Gift.createGift(bundle.getId(), giftUpdateRequest));
+                newGifts.add(Gift.createGift(bundle.getId(),
+                        GiftRequest.builder()
+                                .name(giftUpdateRequest.getName())
+                                .message(giftUpdateRequest.getMessage())
+                                .purchaseUrl(giftUpdateRequest.getPurchaseUrl())
+                                .imageUrls(giftUpdateRequest.getImageUrls())
+                                .build()));
             }
         }
 
