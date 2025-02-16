@@ -12,6 +12,7 @@ import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
+import com.picktory.domain.gift.dto.DraftGiftsResponse;
 import com.picktory.domain.gift.dto.GiftDetailResponse;
 import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.entity.Gift;
@@ -394,5 +395,58 @@ class BundleServiceTest {
 
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_ACCESS_DENIED);
         verify(bundleRepository).findById(bundleId);
+    }
+
+    @Test
+    @DisplayName("✅ 임시 저장된 보따리의 선물 목록 조회 성공")
+    void getDraftGifts_성공() {
+        // Given
+        Long bundleId = 1L;
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .status(BundleStatus.DRAFT)
+                .build();
+
+        List<Gift> mockGifts = Arrays.asList(
+                Gift.builder().id(1L).bundleId(bundleId).name("향수").build(),
+                Gift.builder().id(2L).bundleId(bundleId).name("초콜릿").build()
+        );
+
+        List<GiftImage> mockImages = Arrays.asList(
+                GiftImage.builder().id(1L).gift(mockGifts.get(0)).isPrimary(true).build(),
+                GiftImage.builder().id(2L).gift(mockGifts.get(1)).isPrimary(true).build()
+        );
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+        when(giftRepository.findByBundleId(bundleId)).thenReturn(mockGifts);
+        when(giftImageRepository.findByGiftIds(any())).thenReturn(mockImages);
+
+        // When
+        DraftGiftsResponse response = bundleService.getDraftGifts(bundleId);
+
+        // Then
+        assertThat(response.getGifts()).hasSize(2);
+        verify(bundleRepository).findById(bundleId);
+        verify(giftRepository).findByBundleId(bundleId);
+    }
+
+    @Test
+    @DisplayName("❌ 임시 저장된 보따리의 선물 목록 조회 실패 - DRAFT 상태 아님")
+    void getDraftGifts_실패_DRAFT상태아님() {
+        // Given
+        Long bundleId = 1L;
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .status(BundleStatus.PUBLISHED)
+                .build();
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.getDraftGifts(bundleId));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_BUNDLE_STATUS);
     }
 }
