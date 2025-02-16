@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GiftRepository extends JpaRepository<Gift, Long> {
     List<Gift> findByBundleId(Long bundleId);
@@ -15,4 +16,5 @@ public interface GiftRepository extends JpaRepository<Gift, Long> {
     @Query("DELETE FROM Gift g WHERE g.id IN :giftIds")
     void deleteByIds(@Param("giftIds") List<Long> giftIds);
 
+    Optional<Gift> findByIdAndBundleId(Long id, Long bundleId);
 }

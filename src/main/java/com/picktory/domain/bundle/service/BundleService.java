@@ -373,4 +373,23 @@ public class BundleService {
         log.debug("{} - [id: {}] name: {}, message: {}, purchaseUrl: {}",
                 prefix, gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl());
     }
+    /**
+     * 보따리 개별 선물 조회
+     */
+    @Transactional(readOnly = true)
+    public GiftDetailResponse getGift(Long bundleId, Long giftId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 존재 및 권한 확인
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+
+        // 선물 조회
+        Gift gift = giftRepository.findByIdAndBundleId(giftId, bundleId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.GIFT_NOT_FOUND));
+
+        // 이미지 조회
+        List<GiftImage> images = giftImageRepository.findByGiftId(giftId);
+
+        return GiftDetailResponse.fromEntity(gift, images);
+    }
 }
