@@ -44,6 +44,7 @@ public enum BaseResponseStatus {
     INCOMPLETE_RESPONSES(false, 400, "모든 선물에 대한 답변이 필요합니다."),
     INVALID_RESPONSE_TYPE(false, 400, "잘못된 응답 타입입니다."),
     INVALID_GIFT_ID(false, 400, "존재하지 않는 선물입니다."),
+    INVALID_GIFT_UPDATE(false,400,"요청 사항이 비어있습니다."),
 
     /**
      * 500: Server 오류
