@@ -91,52 +91,180 @@ public class BundleService {
     }
 
     /**
-     * 보따리 업데이트 (선물 수정, 삭제, 추가)
+     * 보따리 업데이트
      */
     @Transactional
     public BundleResponse updateBundle(Long bundleId, BundleUpdateRequest request) {
+        log.info("보따리 업데이트 요청: bundleId = {}", bundleId);
+
+        // 1. 현재 사용자 정보 조회
         User currentUser = authenticationService.getAuthenticatedUser();
-        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
 
-        // 기존 선물 처리
+        // 2. 보따리 유효성 검사 및 조회
+        Bundle bundle = bundleRepository.findById(bundleId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+        if (!bundle.getUserId().equals(currentUser.getId())) {
+            throw new BaseException(BaseResponseStatus.FORBIDDEN);
+        }
+        if (bundle.getStatus() != BundleStatus.DRAFT) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_DRAFT);
+        }
+
+        // 3. 기존 선물 조회
         List<Gift> existingGifts = giftRepository.findByBundleId(bundleId);
-        Map<Long, Gift> existingGiftMap = createGiftMap(existingGifts);
-        logExistingGifts(existingGifts);
+        Map<Long, Gift> existingGiftMap = existingGifts.stream()
+                .collect(Collectors.toMap(Gift::getId, gift -> gift));
 
-        // 선물 업데이트 처리
-        List<Long> receivedGiftIds = getReceivedGiftIds(request);
-        List<Gift> giftsToDelete = getGiftsToDelete(existingGifts, receivedGiftIds);
-        validateFinalGiftCount(request, receivedGiftIds);
+        // 4. 기존 선물 이미지 삭제 (대표 이미지 처리 문제 방지)
+        deleteAllGiftImages(existingGifts);
+        log.info("기존 선물 이미지 삭제 완료");
 
-        // 삭제할 선물 및 이미지 삭제 처리
-        deleteGiftsAndImages(giftsToDelete);
+        // 5. 기존 선물 중 요청에서 빠진 선물 삭제
+        List<Long> receivedGiftIds = request.getGifts().stream()
+                .map(GiftUpdateRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        List<Gift> giftsToDelete = existingGifts.stream()
+                .filter(gift -> !receivedGiftIds.contains(gift.getId()))
+                .toList();
+        deleteGifts(giftsToDelete);
+        log.info("삭제된 선물 수: {}", giftsToDelete.size());
 
-        // 수정 및 추가할 선물 처리
+        // 6. 삭제되지 않은 기존 선물 리스트 생성
+        List<Gift> remainingGifts = existingGifts.stream()
+                .filter(gift -> !giftsToDelete.contains(gift))
+                .toList();
+
+        // 7. 기존 선물 이미지 업데이트 (삭제되지 않은 기존 선물 대상)
+        List<GiftImage> newImages = processGiftImages(request.getGifts(), remainingGifts);
+        giftImageRepository.saveAll(newImages);
+        log.info("기존 선물 이미지 재생성 완료, 저장된 이미지 수: {}", newImages.size());
+
+        // 8. 요청된 선물들을 순회하며 수정 또는 추가 처리
         List<Gift> updatedGifts = new ArrayList<>();
         List<Gift> newGifts = new ArrayList<>();
+        List<GiftImage> newGiftImages = new ArrayList<>();
 
-        for (GiftUpdateRequest giftUpdateRequest : request.getGifts()) {
-            if (giftUpdateRequest.getId() != null && existingGiftMap.containsKey(giftUpdateRequest.getId())) {
-                // 기존 선물 업데이트
-                Gift existingGift = Gift.updateGift(existingGiftMap.get(giftUpdateRequest.getId()), giftUpdateRequest);
-                updatedGifts.add(existingGift);
+        for (GiftUpdateRequest giftRequest : request.getGifts()) {
+            if (giftRequest.getId() != null && existingGiftMap.containsKey(giftRequest.getId())) {
+                // 기존 선물 업데이트 확인 후 수정
+                Gift existingGift = existingGiftMap.get(giftRequest.getId());
+                if (!isGiftUnchanged(existingGift, giftRequest)) {
+                    existingGift.updateGift(giftRequest);
+                    updatedGifts.add(existingGift);
+                }
             } else {
-                // 새 선물 추가
-                newGifts.add(Gift.createGift(bundle.getId(), giftUpdateRequest));
+                // 새로운 선물 저장 (DB 반영 후, ID 획득)
+                Gift persistedGift = giftRepository.save(Gift.createGift(bundle.getId(), giftRequest));
+                newGifts.add(persistedGift);
+
+                // 새 선물의 이미지 저장
+                List<String> newImageUrls = giftRequest.getImageUrls();
+                if (newImageUrls == null || newImageUrls.isEmpty()) {
+                    throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
+                }
+
+                // 첫 번째 이미지는 대표 이미지
+                newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(0), true));
+
+                // 나머지 이미지는 일반 이미지
+                for (int i = 1; i < newImageUrls.size(); i++) {
+                    newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(i), false));
+                }
             }
         }
 
-        // 선물 저장
-        List<Gift> savedGifts = giftRepository.saveAll(updatedGifts);
-        savedGifts.addAll(giftRepository.saveAll(newGifts));
-        logSavedGifts(savedGifts);
+        // 9. 기존 선물 변경 사항 저장
+        if (!updatedGifts.isEmpty()) {
+            giftRepository.saveAll(updatedGifts);
+        }
 
-        // 선물 이미지 저장 및 대표 이미지 설정
-        List<GiftImage> newImages = setPrimaryImage(request.getGifts(), savedGifts);
-        giftImageRepository.saveAll(newImages);
+        // 10. 새로운 선물의 이미지 저장
+        if (!newGiftImages.isEmpty()) {
+            giftImageRepository.saveAll(newGiftImages);
+        }
 
-        return BundleResponse.fromEntity(bundle, savedGifts, newImages);
+        log.info("수정된 선물 수: {}, 추가된 선물 수: {}, 추가된 이미지 수: {}",
+                updatedGifts.size(), newGifts.size(), newGiftImages.size());
+
+        // 11. 최종 저장된 선물, 이미지 데이터 조회
+        List<Gift> savedGifts = giftRepository.findByBundleId(bundleId);
+        List<GiftImage> savedImages = giftImageRepository.findByGiftIdIn(
+                savedGifts.stream().map(Gift::getId).toList());
+
+        // 12. 최종 응답 반환 (DB에서 저장된 데이터 기반)
+        return BundleResponse.fromEntity(bundle, savedGifts, savedImages);
+
     }
+
+    /**
+     * 업데이트 목록에 포함되지 않은 기존 선물 삭제
+     */
+    private void deleteGifts(List<Gift> giftsToDelete) {
+        if (!giftsToDelete.isEmpty()) {
+            List<Long> giftIdsToDelete = giftsToDelete.stream().map(Gift::getId).toList();
+            giftRepository.deleteAll(giftsToDelete);
+            log.info("삭제된 선물 수: {}", giftIdsToDelete.size());
+        }
+    }
+
+    /**
+     * 기존 선물 이미지 모두 삭제
+     */
+    private void deleteAllGiftImages(List<Gift> existingGifts) {
+        List<Long> existingGiftIds = existingGifts.stream()
+                .map(Gift::getId)
+                .toList();
+        if (!existingGiftIds.isEmpty()) {
+            giftImageRepository.deleteByGiftIds(existingGiftIds);
+            log.info("기존 선물 이미지 삭제 완료: {}", existingGiftIds.size());
+        }
+    }
+
+    /**
+     * 선물 수정 여부 판단 (imageurls 제외)
+     */
+    private boolean isGiftUnchanged(Gift existingGift, GiftUpdateRequest newGift) {
+        return existingGift.getName().equals(newGift.getName()) &&
+                Objects.equals(existingGift.getMessage(), newGift.getMessage()) &&
+                Objects.equals(existingGift.getPurchaseUrl(), newGift.getPurchaseUrl());
+    }
+
+    /**
+     * 업데이트 목록에 포함된 기존 선물의 이미지 저장
+     */
+    private List<GiftImage> processGiftImages(List<GiftUpdateRequest> giftRequests, List<Gift> remainingGifts) {
+        List<GiftImage> newImages = new ArrayList<>();
+
+        // 요청된 선물 리스트를 Map으로 변환
+        Map<Long, GiftUpdateRequest> giftRequestMap = giftRequests.stream()
+                .filter(req -> req.getId() != null) // 기존 선물만 매핑
+                .collect(Collectors.toMap(GiftUpdateRequest::getId, req -> req));
+
+        for (Gift gift : remainingGifts) {
+            GiftUpdateRequest giftRequest = giftRequestMap.get(gift.getId());
+
+            if (giftRequest == null) {
+                log.error("기존 선물 ID {}에 대한 요청 데이터가 없음", gift.getId());
+                throw new BaseException(BaseResponseStatus.INVALID_GIFT_UPDATE);
+            }
+
+            List<String> newImageUrls = giftRequest.getImageUrls();
+            if (newImageUrls == null || newImageUrls.isEmpty()) {
+                throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
+            }
+
+            // 대표 이미지 저장
+            newImages.add(GiftImage.createGiftImage(gift, newImageUrls.get(0), true));
+
+            // 나머지 이미지 저장
+            for (int i = 1; i < newImageUrls.size(); i++) {
+                newImages.add(GiftImage.createGiftImage(gift, newImageUrls.get(i), false));
+            }
+        }
+        return newImages;
+    }
+
 
     /**
      * 사용자의 보따리 목록 조회
@@ -354,14 +482,6 @@ public class BundleService {
         long finalGiftCount = receivedGiftIds.size() + (request.getGifts().size() - receivedGiftIds.size());
         if (finalGiftCount < 2) {
             throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
-        }
-    }
-
-    private void deleteGiftsAndImages(List<Gift> giftsToDelete) {
-        if (!giftsToDelete.isEmpty()) {
-            List<Long> giftIdsToDelete = giftsToDelete.stream().map(Gift::getId).toList();
-            giftImageRepository.deleteByGiftIds(giftIdsToDelete);
-            giftRepository.deleteAll(giftsToDelete);
         }
     }
 

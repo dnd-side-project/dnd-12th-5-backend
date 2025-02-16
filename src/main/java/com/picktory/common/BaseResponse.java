@@ -28,4 +28,11 @@ public class BaseResponse<T> {
         this.code = status.getCode();
         this.message = status.getMessage();
     }
+
+    // 새로운 생성자 추가: 직접 코드와 메시지를 설정할 수 있음
+    public BaseResponse(boolean isSuccess, int code, String message) {
+        this.isSuccess = isSuccess;
+        this.code = code;
+        this.message = message;
+    }
 }
