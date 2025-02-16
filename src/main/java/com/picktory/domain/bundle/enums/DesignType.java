@@ -4,5 +4,5 @@ import lombok.Getter;
 
 @Getter
 public enum DesignType {
-    RED, PINK, BLACK, YELLOW, GREEN
+    RED, PINK, BLUE, YELLOW, GREEN
 }

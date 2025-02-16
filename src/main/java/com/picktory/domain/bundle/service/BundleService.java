@@ -52,7 +52,7 @@ public class BundleService {
     private final AuthenticationService authenticationService;
 
     /**
-     * 보따리 최초 생성
+     * 보따리 생성
      */
     public BundleResponse createBundle(BundleRequest request) {
         User currentUser = authenticationService.getAuthenticatedUser();
@@ -68,23 +68,22 @@ public class BundleService {
         // 보따리 유효성 검증
         validateBundleRequest(request);
 
-        // 보따리 저장
+        // 1. 보따리 저장
         Bundle bundle = bundleRepository.save(Bundle.builder()
                 .userId(currentUser.getId())
                 .name(request.getName())
                 .designType(request.getDesignType())
-                .deliveryCharacterType(null)
                 .status(BundleStatus.DRAFT)
                 .isRead(false)
                 .build());
 
-        // 선물 저장
+        // 2. 선물 저장 (Gift 먼저 저장, ID 생성)
         List<Gift> gifts = request.getGifts().stream()
                 .map(giftRequest -> Gift.createGift(bundle.getId(), giftRequest))
                 .toList();
-        List<Gift> savedGifts = giftRepository.saveAll(gifts);
+        List<Gift> savedGifts = giftRepository.saveAll(gifts); // Gift 먼저 저장
 
-        // 선물 이미지 저장 및 대표 이미지 설정
+        // 3. 선물 이미지 저장 (Gift ID가 존재하는 상태에서 저장)
         List<GiftImage> newImages = setPrimaryImage(request.getGifts(), savedGifts);
         giftImageRepository.saveAll(newImages);
 
@@ -199,6 +198,10 @@ public class BundleService {
             Gift gift = savedGifts.get(i);
             GiftImageRequest giftRequest = giftRequests.get(i);
             List<String> imageUrls = giftRequest.getImageUrls();
+
+            if (imageUrls == null || imageUrls.isEmpty()) {
+                throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
+            }
 
             // 각 giftRequest의 첫 번째 이미지가 대표 이미지(isPrimary=true)
             for (int j = 0; j < imageUrls.size(); j++) {

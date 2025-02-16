@@ -30,7 +30,8 @@ public class BundleController {
      */
     @PostMapping
     public ResponseEntity<BundleResponse> createBundle(@Valid @RequestBody BundleRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(bundleService.createBundle(request));
+        BundleResponse response = bundleService.createBundle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
