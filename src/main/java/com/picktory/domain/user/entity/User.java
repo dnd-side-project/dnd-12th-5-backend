@@ -19,7 +19,7 @@ public class User extends BaseEntity {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String kakaoId;
+    private Long kakaoId;
 
     private String nickname;
 
@@ -29,7 +29,7 @@ public class User extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder
-    public User(String kakaoId, String nickname) {
+    public User(Long kakaoId, String nickname) {
         this.kakaoId = kakaoId;
         this.nickname = nickname;
         this.isDeleted = false;

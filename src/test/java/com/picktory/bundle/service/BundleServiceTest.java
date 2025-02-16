@@ -63,7 +63,7 @@ class BundleServiceTest {
     @BeforeEach
     void setUp() {
         mockUser = User.builder()
-                .kakaoId("testKakaoId")
+                .kakaoId(12345678L)
                 .nickname("TestUser")
                 .build();
 

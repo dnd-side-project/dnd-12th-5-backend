@@ -12,5 +12,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByIdAndIsDeletedFalse(Long id);
     
     // 카카오 아이디로 사용자 조회
-    Optional<User> findByKakaoId(String kakaoId);
+    Optional<User> findByKakaoId(Long kakaoId);
 }

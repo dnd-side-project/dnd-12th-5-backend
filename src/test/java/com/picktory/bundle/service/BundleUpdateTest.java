@@ -66,7 +66,7 @@ class BundleUpdateTest {
     @BeforeEach
     void setUp() {
         mockUser = User.builder()
-                .kakaoId("testKakaoId")
+                .kakaoId(12345678L)
                 .nickname("TestUser")
                 .build();
 
@@ -302,7 +302,7 @@ class BundleUpdateTest {
     void 보따리_업데이트_권한없는유저_실패() {
         // Given: 다른 유저의 보따리
         User anotherUser = User.builder()
-                .kakaoId("otherUser")
+                .kakaoId(87654321L)
                 .nickname("OtherUser")
                 .build();
 
