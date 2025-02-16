@@ -284,7 +284,7 @@ public class BundleService {
     /**
      * 보따리 조회 API (간이 조회)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public BundleSummaryResponse getBundle(Long bundleId) {
         User currentUser = authenticationService.getAuthenticatedUser();
 
