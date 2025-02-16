@@ -142,6 +142,8 @@ public class BundleService {
 
         // 8. 요청된 선물들을 순회하며 수정 또는 추가 처리
         List<Gift> updatedGifts = new ArrayList<>();
+        List<Gift> newGifts = new ArrayList<>();
+        List<GiftImage> newGiftImages = new ArrayList<>();
 
         for (GiftUpdateRequest giftRequest : request.getGifts()) {
             if (giftRequest.getId() != null && existingGiftMap.containsKey(giftRequest.getId())) {
@@ -152,8 +154,23 @@ public class BundleService {
                     updatedGifts.add(existingGift);
                 }
             } else {
-                // 새로운 선물 즉시 DB 저장
-                giftRepository.save(Gift.createGift(bundle.getId(), giftRequest));
+                // 새로운 선물 저장 (DB 반영 후, ID 획득)
+                Gift persistedGift = giftRepository.save(Gift.createGift(bundle.getId(), giftRequest));
+                newGifts.add(persistedGift);
+
+                // 새 선물의 이미지 저장
+                List<String> newImageUrls = giftRequest.getImageUrls();
+                if (newImageUrls == null || newImageUrls.isEmpty()) {
+                    throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
+                }
+
+                // 첫 번째 이미지는 대표 이미지
+                newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(0), true));
+
+                // 나머지 이미지는 일반 이미지
+                for (int i = 1; i < newImageUrls.size(); i++) {
+                    newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(i), false));
+                }
             }
         }
 
@@ -162,15 +179,22 @@ public class BundleService {
             giftRepository.saveAll(updatedGifts);
         }
 
-        log.info("수정된 선물 수: {}", updatedGifts.size());
+        // 10. 새로운 선물의 이미지 저장
+        if (!newGiftImages.isEmpty()) {
+            giftImageRepository.saveAll(newGiftImages);
+        }
 
-        // 10. 최종 저장된 선물, 이미지 데이터 조회
+        log.info("수정된 선물 수: {}, 추가된 선물 수: {}, 추가된 이미지 수: {}",
+                updatedGifts.size(), newGifts.size(), newGiftImages.size());
+
+        // 11. 최종 저장된 선물, 이미지 데이터 조회
         List<Gift> savedGifts = giftRepository.findByBundleId(bundleId);
         List<GiftImage> savedImages = giftImageRepository.findByGiftIdIn(
                 savedGifts.stream().map(Gift::getId).toList());
 
-        // 11. 최종 응답 반환 (DB에서 저장된 데이터 기반)
+        // 12. 최종 응답 반환 (DB에서 저장된 데이터 기반)
         return BundleResponse.fromEntity(bundle, savedGifts, savedImages);
+
     }
 
     /**
