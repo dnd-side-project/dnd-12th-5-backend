@@ -84,6 +84,7 @@ public class SecurityConfig {
                 "/v3/api-docs/**",
                 "/favicon.ico",
                 "/default-ui.css",
+                "/kakao/callback",
                 API_V1 + "oauth/login",
                 API_V1 + "auth/backup/signup",
                 API_V1 + "auth/backup/login",
