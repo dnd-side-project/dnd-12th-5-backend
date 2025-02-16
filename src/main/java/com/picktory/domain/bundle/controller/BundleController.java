@@ -10,6 +10,8 @@ import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.dto.BundleUpdateRequest;
 
 import com.picktory.domain.bundle.service.BundleService;
+import com.picktory.domain.gift.dto.DraftGiftsResponse;
+import com.picktory.domain.gift.dto.GiftDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -99,6 +101,25 @@ public class BundleController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
+    /**
+     * 보따리 개별 선물 조회 API
+     */
+    @GetMapping("/{bundleId}/gifts/{giftId}")
+    public ResponseEntity<GiftDetailResponse> getGift(
+            @PathVariable Long bundleId,
+            @PathVariable Long giftId
+    ) {
+        return ResponseEntity.ok(bundleService.getGift(bundleId, giftId));
+    }
+
+    /**
+     * 임시 저장된 보따리의 선물 목록 조회 API
+     */
+    @GetMapping("/{id}/gifts")
+    public ResponseEntity<DraftGiftsResponse> getDraftGifts(@PathVariable Long id) {
+        return ResponseEntity.ok(bundleService.getDraftGifts(id));
+    }
+  
     /**
      * 보따리 조회 API (간이 조회)
      */

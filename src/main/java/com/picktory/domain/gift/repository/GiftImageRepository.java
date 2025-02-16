@@ -27,4 +27,6 @@ public interface GiftImageRepository extends JpaRepository<GiftImage, Long> {
     @Query("SELECT gi FROM GiftImage gi WHERE gi.gift.id = :giftId AND gi.isPrimary = true")
     Optional<GiftImage> findPrimaryImageByGiftId(@Param("giftId") Long giftId);
 
+    @Query("SELECT gi FROM GiftImage gi WHERE gi.gift.id IN :giftIds")
+    List<GiftImage> findByGiftIds(@Param("giftIds") List<Long> giftIds);
 }

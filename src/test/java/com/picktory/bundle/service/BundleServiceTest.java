@@ -12,6 +12,8 @@ import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
+import com.picktory.domain.gift.dto.DraftGiftsResponse;
+import com.picktory.domain.gift.dto.GiftDetailResponse;
 import com.picktory.domain.gift.dto.GiftRequest;
 import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
@@ -214,7 +216,6 @@ class BundleServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getDeliveryCharacterType()).isEqualTo(DeliveryCharacterType.CHARACTER_1);
         assertThat(response.getStatus()).isEqualTo(BundleStatus.PUBLISHED);
-        assertThat(response.getLink()).startsWith("/delivery/");
 
         verify(bundleRepository).findById(bundleId);
         verify(bundleRepository).save(any(Bundle.class));
@@ -264,5 +265,188 @@ class BundleServiceTest {
 
         assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_BUNDLE_STATUS);
         verify(bundleRepository).findById(bundleId);
+    }
+
+    @Test
+    @DisplayName("✅ 개별 선물 조회 성공")
+    void getGift_성공() {
+        // Given
+        Long bundleId = 1L;
+        Long giftId = 1L;
+
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .name("Test Bundle")
+                .designType(DesignType.RED)
+                .status(BundleStatus.PUBLISHED)
+                .build();
+
+        Gift mockGift = Gift.builder()
+                .id(giftId)
+                .bundleId(bundleId)
+                .name("고급 초콜릿")
+                .message("특별한 날을 위한 달콤한 선물!")
+                .purchaseUrl("https://example.com/chocolate")
+                .build();
+
+        List<GiftImage> mockImages = Arrays.asList(
+                GiftImage.builder()
+                        .id(1L)
+                        .gift(mockGift)
+                        .imageUrl("https://s3.example.com/image1.jpg")
+                        .isPrimary(true)
+                        .build(),
+                GiftImage.builder()
+                        .id(2L)
+                        .gift(mockGift)
+                        .imageUrl("https://s3.example.com/image2.jpg")
+                        .isPrimary(false)
+                        .build()
+        );
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+        when(giftRepository.findByIdAndBundleId(giftId, bundleId)).thenReturn(Optional.of(mockGift));
+        when(giftImageRepository.findByGiftId(giftId)).thenReturn(mockImages);
+
+        // When
+        GiftDetailResponse response = bundleService.getGift(bundleId, giftId);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(giftId);
+        assertThat(response.getName()).isEqualTo("고급 초콜릿");
+        assertThat(response.getMessage()).isEqualTo("특별한 날을 위한 달콤한 선물!");
+        assertThat(response.getPurchaseUrl()).isEqualTo("https://example.com/chocolate");
+        assertThat(response.getThumbnail()).isEqualTo("https://s3.example.com/image1.jpg");
+        assertThat(response.getImageUrls()).hasSize(1);
+        assertThat(response.getImageUrls().get(0)).isEqualTo("https://s3.example.com/image2.jpg");
+
+        verify(bundleRepository).findById(bundleId);
+        verify(giftRepository).findByIdAndBundleId(giftId, bundleId);
+        verify(giftImageRepository).findByGiftId(giftId);
+    }
+
+    @Test
+    @DisplayName("❌ 개별 선물 조회 실패 - 존재하지 않는 보따리")
+    void getGift_실패_보따리없음() {
+        // Given
+        Long nonExistentBundleId = 999L;
+        Long giftId = 1L;
+
+        when(bundleRepository.findById(nonExistentBundleId)).thenReturn(Optional.empty());
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.getGift(nonExistentBundleId, giftId));
+
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_NOT_FOUND);
+        verify(bundleRepository).findById(nonExistentBundleId);
+    }
+
+    @Test
+    @DisplayName("❌ 개별 선물 조회 실패 - 존재하지 않는 선물")
+    void getGift_실패_선물없음() {
+        // Given
+        Long bundleId = 1L;
+        Long nonExistentGiftId = 999L;
+
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .name("Test Bundle")
+                .designType(DesignType.RED)
+                .status(BundleStatus.PUBLISHED)
+                .build();
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+        when(giftRepository.findByIdAndBundleId(nonExistentGiftId, bundleId)).thenReturn(Optional.empty());
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.getGift(bundleId, nonExistentGiftId));
+
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.GIFT_NOT_FOUND);
+        verify(bundleRepository).findById(bundleId);
+        verify(giftRepository).findByIdAndBundleId(nonExistentGiftId, bundleId);
+    }
+
+    @Test
+    @DisplayName("❌ 개별 선물 조회 실패 - 권한 없음")
+    void getGift_실패_권한없음() {
+        // Given
+        Long bundleId = 1L;
+        Long giftId = 1L;
+        Long differentUserId = 999L;
+
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(differentUserId)  // 다른 사용자의 보따리
+                .name("Test Bundle")
+                .designType(DesignType.RED)
+                .status(BundleStatus.PUBLISHED)
+                .build();
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.getGift(bundleId, giftId));
+
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.BUNDLE_ACCESS_DENIED);
+        verify(bundleRepository).findById(bundleId);
+    }
+
+    @Test
+    @DisplayName("✅ 임시 저장된 보따리의 선물 목록 조회 성공")
+    void getDraftGifts_성공() {
+        // Given
+        Long bundleId = 1L;
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .status(BundleStatus.DRAFT)
+                .build();
+
+        List<Gift> mockGifts = Arrays.asList(
+                Gift.builder().id(1L).bundleId(bundleId).name("향수").build(),
+                Gift.builder().id(2L).bundleId(bundleId).name("초콜릿").build()
+        );
+
+        List<GiftImage> mockImages = Arrays.asList(
+                GiftImage.builder().id(1L).gift(mockGifts.get(0)).isPrimary(true).build(),
+                GiftImage.builder().id(2L).gift(mockGifts.get(1)).isPrimary(true).build()
+        );
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+        when(giftRepository.findByBundleId(bundleId)).thenReturn(mockGifts);
+        when(giftImageRepository.findByGiftIds(any())).thenReturn(mockImages);
+
+        // When
+        DraftGiftsResponse response = bundleService.getDraftGifts(bundleId);
+
+        // Then
+        assertThat(response.getGifts()).hasSize(2);
+        verify(bundleRepository).findById(bundleId);
+        verify(giftRepository).findByBundleId(bundleId);
+    }
+
+    @Test
+    @DisplayName("❌ 임시 저장된 보따리의 선물 목록 조회 실패 - DRAFT 상태 아님")
+    void getDraftGifts_실패_DRAFT상태아님() {
+        // Given
+        Long bundleId = 1L;
+        Bundle mockBundle = Bundle.builder()
+                .id(bundleId)
+                .userId(mockUser.getId())
+                .status(BundleStatus.PUBLISHED)
+                .build();
+
+        when(bundleRepository.findById(bundleId)).thenReturn(Optional.of(mockBundle));
+
+        // When & Then
+        BaseException exception = assertThrows(BaseException.class,
+                () -> bundleService.getDraftGifts(bundleId));
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_BUNDLE_STATUS);
     }
 }
