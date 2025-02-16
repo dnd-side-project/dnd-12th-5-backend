@@ -261,7 +261,7 @@ public class BundleService {
     }
 
     private String generateDeliveryLink() {
-        return "/delivery/" + UUID.randomUUID().toString();
+        return UUID.randomUUID().toString();
     }
 
     private void logGiftDetails(String prefix, Gift gift) {
