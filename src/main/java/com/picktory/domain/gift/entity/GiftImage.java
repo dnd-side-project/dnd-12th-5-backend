@@ -17,7 +17,7 @@ public class GiftImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 🎯 ManyToOne 단방향 관계 설정
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gift_id", nullable = false)
     private Gift gift;
 

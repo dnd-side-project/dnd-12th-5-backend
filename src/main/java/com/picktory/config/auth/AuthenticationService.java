@@ -23,13 +23,16 @@ public class AuthenticationService {
             throw new IllegalStateException(BaseResponseStatus.INVALID_JWT.getMessage());
         }
 
-        // 사용자의 ID가 숫자가 아니라면 Kakao ID로 조회
+        // JWT의 subject 값은 서비스의 userId이므로, 이를 숫자로 변환하여 조회
         String authName = authentication.getName();
         System.out.println("인증된 사용자 ID: " + authName);
 
-        // 만약 `authName`이 숫자가 아닌 경우, Kakao OAuth로 로그인한 사용자로 가정
-        return userRepository.findByKakaoId(authName)
-                .orElseThrow(() -> new IllegalStateException(BaseResponseStatus.USER_NOT_FOUND.getMessage()));
+        try {
+            Long userId = Long.parseLong(authName);
+            return userRepository.findByIdAndIsDeletedFalse(userId)
+                    .orElseThrow(() -> new IllegalStateException(BaseResponseStatus.USER_NOT_FOUND.getMessage()));
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("유효하지 않은 사용자 ID입니다.");
+        }
     }
-
 }

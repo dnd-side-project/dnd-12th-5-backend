@@ -209,6 +209,47 @@ public class BundleService {
         return newImages;
     }
 
+    /**
+     * 보따리 삭제
+     */
+    @Transactional
+    public void deleteBundle(Long bundleId) {
+        Long userId = authenticationService.getAuthenticatedUser().getId();
+
+        // 보따리 조회 (사용자가 소유한 보따리인지 확인)
+        Bundle bundle = bundleRepository.findById(bundleId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+
+        if (!bundle.getUserId().equals(userId)) {
+            throw new BaseException(BaseResponseStatus.FORBIDDEN);
+        }
+
+        log.info("보따리 삭제 시작 - bundleId: {}, userId: {}", bundleId, userId);
+
+        // 보따리에 속한 선물들 조회
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+        for (Gift gift : gifts) {
+            // 선물에 속한 이미지 삭제
+            List<GiftImage> giftImages = giftImageRepository.findByGiftId(gift.getId());
+
+            // 추후 S3 삭제 로직 추가 가능
+            // for (GiftImage image : giftImages) {
+            //     s3Service.deleteImageFromS3(image.getImageUrl()); // S3에서 삭제
+            // }
+
+            // DB에서 이미지 삭제
+            giftImageRepository.deleteAll(giftImages);
+        }
+
+        // 선물 삭제
+        giftRepository.deleteAll(gifts);
+
+        // 보따리 삭제
+        bundleRepository.delete(bundle);
+
+        log.info("보따리 삭제 완료 - bundleId: {}", bundleId);
+    }
+
     private Bundle validateAndGetBundle(Long bundleId, User currentUser) {
         Bundle bundle = bundleRepository.findById(bundleId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
