@@ -1,4 +1,4 @@
-package com.picktory.common.exception;
+package com.picktory.common.error.handler;
 
 import com.picktory.common.BaseResponse;
 import com.picktory.common.BaseResponseStatus;
