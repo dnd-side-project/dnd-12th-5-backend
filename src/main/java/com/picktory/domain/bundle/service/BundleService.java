@@ -281,6 +281,36 @@ public class BundleService {
         return new BundleResultResponse(bundle.getId(), giftResponses);
     }
 
+    /**
+     * 보따리 조회 API (간이 조회)
+     */
+    @Transactional(readOnly = true)
+    public BundleSummaryResponse getBundle(Long bundleId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 조회 및 사용자 검증
+        Bundle bundle = bundleRepository.findById(bundleId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+
+        if (!bundle.getUserId().equals(currentUser.getId())) {
+            throw new BaseException(BaseResponseStatus.FORBIDDEN);
+        }
+
+        // 보따리에 포함된 선물 목록 조회
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+
+        // 각 선물의 대표 이미지 가져오기
+        List<GiftImage> images = giftImageRepository.findByGiftIdIn(gifts.stream().map(Gift::getId).toList());
+
+        // 최초 조회 시 isRead 업데이트
+        if (bundle.getStatus() == BundleStatus.COMPLETED && !bundle.getIsRead()) {
+            bundle.markAsRead();
+        }
+
+        return BundleSummaryResponse.fromEntity(bundle, gifts, images);
+    }
+
+
     private Bundle validateAndGetBundle(Long bundleId, User currentUser) {
         Bundle bundle = bundleRepository.findById(bundleId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
