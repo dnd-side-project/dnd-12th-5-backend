@@ -10,6 +10,7 @@ import com.picktory.domain.bundle.dto.BundleResponse;
 import com.picktory.domain.bundle.dto.BundleUpdateRequest;
 
 import com.picktory.domain.bundle.service.BundleService;
+import com.picktory.domain.gift.dto.DraftGiftsResponse;
 import com.picktory.domain.gift.dto.GiftDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +111,14 @@ public class BundleController {
             @PathVariable Long giftId
     ) {
         return ResponseEntity.ok(bundleService.getGift(bundleId, giftId));
+    }
+
+    /**
+     * 임시 저장된 보따리의 선물 목록 조회 API
+     */
+    @GetMapping("/{id}/gifts")
+    public ResponseEntity<DraftGiftsResponse> getDraftGifts(@PathVariable Long id) {
+        return ResponseEntity.ok(bundleService.getDraftGifts(id));
     }
   
     /**
