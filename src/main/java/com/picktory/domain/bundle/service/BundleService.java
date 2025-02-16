@@ -359,4 +359,31 @@ public class BundleService {
 
         return GiftDetailResponse.fromEntity(gift, images);
     }
+
+
+    /**
+     * 임시 저장된 보따리의 선물 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public DraftGiftsResponse getDraftGifts(Long bundleId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 존재 및 권한 확인
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+
+        // DRAFT 상태 확인
+        if (bundle.getStatus() != BundleStatus.DRAFT) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
+        }
+
+        // 선물 목록 조회
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+
+        // 선물 이미지 조회
+        List<GiftImage> images = giftImageRepository.findByGiftIds(
+                gifts.stream().map(Gift::getId).collect(Collectors.toList())
+        );
+
+        return DraftGiftsResponse.from(gifts, images);
+    }
 }
