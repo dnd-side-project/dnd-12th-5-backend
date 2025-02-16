@@ -35,7 +35,6 @@ public class BundleController {
     }
 
     /**
-
      * 보따리 업데이트 API
      */
     @PutMapping("/{bundleId}")

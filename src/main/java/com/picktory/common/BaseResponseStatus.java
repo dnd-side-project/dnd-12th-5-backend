@@ -36,6 +36,7 @@ public enum BaseResponseStatus {
     NOT_DELIVERED_YET(false, 400 ,"아직 배송 상태가 아닙니다" ),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
     VALIDATION_ERROR(false, 400, "유효성 검증 오류"),
+    INVALID_BUNDLE_STATUS_FOR_DRAFT(false, 400, "임시저장 상태인 보따리가 아닙니다."),
     /**
      * 400: Gift Response 관련 오류
      */
