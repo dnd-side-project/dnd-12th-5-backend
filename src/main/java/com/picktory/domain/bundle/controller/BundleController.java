@@ -31,7 +31,8 @@ public class BundleController {
      */
     @PostMapping
     public ResponseEntity<BundleResponse> createBundle(@Valid @RequestBody BundleRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(bundleService.createBundle(request));
+        BundleResponse response = bundleService.createBundle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -110,6 +111,14 @@ public class BundleController {
     ) {
         return ResponseEntity.ok(bundleService.getGift(bundleId, giftId));
     }
-
+  
+    /**
+     * 보따리 조회 API (간이 조회)
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<BundleSummaryResponse>> getBundle(@PathVariable Long id) {
+        BundleSummaryResponse response = bundleService.getBundle(id);
+        return ResponseEntity.ok(new BaseResponse<>(response));
+    }
 }
 

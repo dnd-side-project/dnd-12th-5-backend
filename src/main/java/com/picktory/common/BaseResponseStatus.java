@@ -10,7 +10,7 @@ public enum BaseResponseStatus {
      * 200: 성공 응답
      */
     SUCCESS(true, 200, "요청에 성공하였습니다."),
-
+    CREATED(true, 201, "새로운 리소스가 생성되었습니다."),
     /**
      * 400: Client 오류 (잘못된 요청)
      */
@@ -24,6 +24,9 @@ public enum BaseResponseStatus {
     BUNDLE_NAME_REQUIRED(false, 400, "보따리 이름을 입력하세요."),
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
     BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 2개의 선물을 포함해야 합니다."),
+    GIFT_IMAGE_REQUIRED(false, 400, "선물에는 이미지가 최소 1장 포함되어야 합니다."),
+    INVALID_JSON_REQUEST(false, 400, "잘못된 JSON 형식입니다."),
+    INVALID_DESIGN_TYPE(false, 400, "유효하지 않은 디자인 타입입니다. 가능한 값: RED, GREEN, YELLOW, PINK, BLUE"),
 
     BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
     BUNDLE_NOT_FOUND(false, 404, "보따리를 찾을 수 없습니다."),
@@ -32,7 +35,7 @@ public enum BaseResponseStatus {
     INVALID_LINK(false, 400, "유효하지 않은 배달 링크입니다."),
     NOT_DELIVERED_YET(false, 400 ,"아직 배송 상태가 아닙니다" ),
     INVALID_BUNDLE_STATUS_FOR_COMPLETE(false, 400, "PUBLISHED 상태에서만 COMPLETED로 변경 가능합니다."),
-
+    VALIDATION_ERROR(false, 400, "유효성 검증 오류"),
     /**
      * 400: Gift Response 관련 오류
      */
