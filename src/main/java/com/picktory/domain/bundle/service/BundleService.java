@@ -250,6 +250,37 @@ public class BundleService {
         log.info("보따리 삭제 완료 - bundleId: {}", bundleId);
     }
 
+     /**
+     * 보따리 결과 조회
+     */
+    public BundleResultResponse getBundleResult(Long bundleId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+
+        // 보따리 조회 & COMPLETED 상태 검증
+        Bundle bundle = bundleRepository.findByIdAndStatus(bundleId, BundleStatus.COMPLETED)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
+
+        // 본인 보따리인지 확인
+        if (!bundle.getUserId().equals(currentUser.getId())) {
+            throw new BaseException(BaseResponseStatus.BUNDLE_ACCESS_DENIED);
+        }
+
+        // 보따리에 포함된 선물 목록을 직접 조회
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+
+        // 각 선물에 대한 대표 이미지 조회 (대표 이미지가 없으면 첫 번째 이미지 반환)
+        List<BundleResultGiftResponse> giftResponses = gifts.stream()
+                .map(gift -> {
+                    GiftImage primaryImage = giftImageRepository.findPrimaryImageByGiftId(gift.getId())
+                            .orElseGet(() -> giftImageRepository.findByGiftId(gift.getId()).stream().findFirst().orElse(null));
+
+                    return BundleResultGiftResponse.from(gift, primaryImage);
+                })
+                .toList();
+
+        return new BundleResultResponse(bundle.getId(), giftResponses);
+    }
+
     private Bundle validateAndGetBundle(Long bundleId, User currentUser) {
         Bundle bundle = bundleRepository.findById(bundleId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));

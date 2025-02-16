@@ -1,6 +1,7 @@
 package com.picktory.domain.bundle.repository;
 
 import com.picktory.domain.bundle.entity.Bundle;
+import com.picktory.domain.bundle.enums.BundleStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -26,4 +27,6 @@ public interface BundleRepository extends JpaRepository<Bundle, Long> {
      */
     @Query("SELECT b FROM Bundle b WHERE b.userId = :userId ORDER BY b.updatedAt DESC LIMIT 8")
     List<Bundle> findTop8ByUserIdOrderByUpdatedAtDesc(Long userId);
+
+    Optional<Bundle> findByIdAndStatus(Long id, BundleStatus status);
 }

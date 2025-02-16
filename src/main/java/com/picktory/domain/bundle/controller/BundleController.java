@@ -89,5 +89,14 @@ public class BundleController {
         bundleService.deleteBundle(bundleId);
         return ResponseEntity.noContent().build(); // 204
     }
+
+    /**
+     * 보따리 결과 조회 API
+     */
+    @GetMapping("/{id}/result")
+    public ResponseEntity<BaseResponse<BundleResultResponse>> getBundleResult(@PathVariable Long id) {
+        BundleResultResponse response = bundleService.getBundleResult(id);
+        return ResponseEntity.ok(new BaseResponse<>(response));
+    }
 }
 
