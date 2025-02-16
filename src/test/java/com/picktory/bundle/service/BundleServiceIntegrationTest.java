@@ -59,10 +59,10 @@ class BundleServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         // ✅ MySQL에서 testuser 가져오기 (없으면 자동 생성)
-        testUser = userRepository.findByKakaoId("testuserkakao")
+        testUser = userRepository.findByKakaoId(12345678L)
                 .orElseGet(() -> {
                     User newUser = User.builder()
-                            .kakaoId("testuserkakao")
+                            .kakaoId(12345678L)
                             .nickname("testusernick")
                             .build();
                     return userRepository.save(newUser);
@@ -78,7 +78,7 @@ class BundleServiceIntegrationTest {
 //    }
 
     @Test
-    @WithMockUser(username = "testuserkakao") // ✅ 테스트에서 인증된 사용자로 가정
+    @WithMockUser(username = "12345678") // ✅ 테스트에서 인증된 사용자로 가정
     @DisplayName("✅ MySQL 연동 - 보따리 최초 생성 성공")
     void 보따리_최초_생성_테스트() {
         // Given: 보따리 생성 요청 데이터

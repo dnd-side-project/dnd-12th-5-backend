@@ -89,7 +89,7 @@ class UserServiceTest {
         )).thenReturn(userInfoResponseEntity);
 
         // 3. 신규 유저 생성을 위해 기존 유저가 없음을 시뮬레이션
-        when(userRepository.findByKakaoId(String.valueOf(kakaoUserInfo.getId())))
+        when(userRepository.findByKakaoId(kakaoUserInfo.getId()))
                 .thenReturn(Optional.empty());
 
         // 4. 신규 유저 저장 시 JPA가 ID를 할당하는 동작을 모방 (리플렉션 사용)
@@ -130,7 +130,7 @@ class UserServiceTest {
                 any(HttpEntity.class),
                 eq(KakaoUserInfo.class)
         );
-        verify(userRepository).findByKakaoId(String.valueOf(kakaoUserInfo.getId()));
+        verify(userRepository).findByKakaoId(kakaoUserInfo.getId());
         verify(userRepository).save(any(User.class));
         verify(jwtTokenProvider).generateToken(anyString());
     }
@@ -161,15 +161,19 @@ class UserServiceTest {
 
         // 2. Kakao User Info 응답 모킹
         KakaoUserInfo.KakaoAccount.Profile profile = KakaoUserInfo.KakaoAccount.Profile.builder()
-                .nickname("ExistingUser")
+                .nickname("TestUser")
                 .build();
+
         KakaoUserInfo.KakaoAccount account = KakaoUserInfo.KakaoAccount.builder()
                 .profile(profile)
                 .build();
+
         KakaoUserInfo kakaoUserInfo = KakaoUserInfo.builder()
-                .id(67890L)
+                .id(12345L)
                 .kakaoAccount(account)
                 .build();
+
+        // 카카오 사용자 정보 응답 모킹 추가
         ResponseEntity<KakaoUserInfo> userInfoResponseEntity =
                 new ResponseEntity<>(kakaoUserInfo, HttpStatus.OK);
         when(restTemplate.exchange(
@@ -181,16 +185,18 @@ class UserServiceTest {
 
         // 3. 기존 유저가 존재함을 시뮬레이션
         User existingUser = User.builder()
-                .kakaoId(String.valueOf(kakaoUserInfo.getId()))
+                .kakaoId(kakaoUserInfo.getId())
                 .nickname(kakaoUserInfo.getKakaoAccount().getProfile().getNickname())
                 .build();
         Field idField = User.class.getDeclaredField("id");
         idField.setAccessible(true);
-        idField.set(existingUser, 2L);
-        when(userRepository.findByKakaoId(String.valueOf(kakaoUserInfo.getId())))
+        idField.set(existingUser, 1L);
+
+        // findByKakaoId 모킹 추가
+        when(userRepository.findByKakaoId(kakaoUserInfo.getId()))
                 .thenReturn(Optional.of(existingUser));
 
-        // 4. JWT 토큰 생성 모킹
+
         JwTokenDto dummyToken = new JwTokenDto(
                 "Bearer",
                 "existing-access-token",
@@ -199,15 +205,12 @@ class UserServiceTest {
         );
         when(jwtTokenProvider.generateToken(anyString())).thenReturn(dummyToken);
 
-        // 5. 로그인 메소드 호출
         UserLoginResponse loginResponse = userService.login(code);
 
-        // 6. 결과 검증
         assertThat(loginResponse).isNotNull();
         assertThat(loginResponse.getAccessToken()).isEqualTo("existing-access-token");
         assertThat(loginResponse.getRefreshToken()).isEqualTo("existing-refresh-token");
 
-        // 7. 기존 유저인 경우 신규 저장(save)이 호출되지 않아야 함
         verify(userRepository, never()).save(any(User.class));
         verify(jwtTokenProvider).generateToken(anyString());
     }
@@ -239,7 +242,7 @@ class UserServiceTest {
 
         // 테스트용 User 객체 생성
         User user = User.builder()
-                .kakaoId("12345")
+                .kakaoId(12345L)
                 .nickname("TestUser")
                 .build();
         Field idField = User.class.getDeclaredField("id");
@@ -273,7 +276,7 @@ class UserServiceTest {
 
         // 탈퇴 전 상태의 User 객체 생성
         User user = User.builder()
-                .kakaoId("12345")
+                .kakaoId(12345L)
                 .nickname("TestUser")
                 .build();
         Field idField = User.class.getDeclaredField("id");

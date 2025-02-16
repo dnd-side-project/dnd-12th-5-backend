@@ -52,7 +52,7 @@ public class UserService {
             KakaoUserInfo kakaoUserInfo = getKakaoUserInfo(kakaoAccessToken);
             log.info("Retrieved Kakao user info for id: {}", kakaoUserInfo.getId());
 
-            User user = userRepository.findByKakaoId(String.valueOf(kakaoUserInfo.getId()))
+            User user = userRepository.findByKakaoId(kakaoUserInfo.getId())
                     .map(foundUser -> {
                         log.info("Found existing user: {}", foundUser.getId());
                         if (foundUser.isDeleted()) {
@@ -198,7 +198,7 @@ public class UserService {
 
     private User createUser(KakaoUserInfo userInfo) {
         User newUser = User.builder()
-                .kakaoId(String.valueOf(userInfo.getId()))
+                .kakaoId(userInfo.getId())
                 .nickname(userInfo.getKakaoAccount().getProfile().getNickname())
                 .build();
 
@@ -207,7 +207,7 @@ public class UserService {
         return savedUser;
     }
 
-    private void unlinkKakaoAccount(String kakaoId) {
+    private void unlinkKakaoAccount(Long kakaoId) {
         try {
             log.debug("Unlinking Kakao account: {}", kakaoId);
 
@@ -217,7 +217,7 @@ public class UserService {
 
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("target_id_type", "user_id");
-            params.add("target_id", kakaoId);
+            params.add("target_id", String.valueOf(kakaoId));
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
             restTemplate.postForEntity(KAKAO_UNLINK_URL, request, String.class);
