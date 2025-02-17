@@ -136,6 +136,8 @@ class ResponseServiceTest {
             assertThat(result.getBundle()).satisfies(bundleInfo -> {
                 assertThat(bundleInfo.getDelivery_character_type())
                         .isEqualTo(DeliveryCharacterType.CHARACTER_1.name());
+                assertThat(bundleInfo.getDesign_type())
+                        .isEqualTo(DesignType.RED.name());
                 assertThat(bundleInfo.getStatus())
                         .isEqualTo(BundleStatus.PUBLISHED.name());
                 assertThat(bundleInfo.getTotal_gifts()).isEqualTo(1);
