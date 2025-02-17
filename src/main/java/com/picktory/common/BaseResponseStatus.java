@@ -27,6 +27,8 @@ public enum BaseResponseStatus {
     GIFT_IMAGE_REQUIRED(false, 400, "선물에는 이미지가 최소 1장 포함되어야 합니다."),
     INVALID_JSON_REQUEST(false, 400, "잘못된 JSON 형식입니다."),
     INVALID_DESIGN_TYPE(false, 400, "유효하지 않은 디자인 타입입니다. 가능한 값: RED, GREEN, YELLOW, PINK, BLUE"),
+    GIFT_IMAGE_COUNT(false, 400, "선물에는 이미지가 최소 1장, 최대 5장 포함되어야 합니다."),
+    INVALID_GIFT_IMAGE_TYPE(false, 400, "지원되지 않는 이미지 형식입니다. (JPEG, PNG, WebP, HEIC만 허용)"),
 
     BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
     BUNDLE_NOT_FOUND(false, 404, "보따리를 찾을 수 없습니다."),
