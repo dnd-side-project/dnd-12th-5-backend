@@ -18,6 +18,7 @@ public class ResponseBundleDto {
     public static class BundleInfo {
         private String delivery_character_type;
         private String status;
+        private String design_type;
         private List<GiftInfo> gifts;
         private int total_gifts;
     }
@@ -57,6 +58,7 @@ public class ResponseBundleDto {
         return ResponseBundleDto.builder()
                 .bundle(BundleInfo.builder()
                         .delivery_character_type(bundle.getDeliveryCharacterType().name())
+                        .design_type(bundle.getDesignType().name())
                         .status(bundle.getStatus().name())
                         .gifts(giftInfos)
                         .total_gifts(gifts.size())
