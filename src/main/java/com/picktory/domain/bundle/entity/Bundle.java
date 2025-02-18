@@ -36,7 +36,7 @@ public class Bundle {
     @Column(nullable = true) // NULL 허용
     private DeliveryCharacterType deliveryCharacterType;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String link; // 배달용 링크 (없으면 PUBLISHED 불가)
 
     @Enumerated(EnumType.STRING)
