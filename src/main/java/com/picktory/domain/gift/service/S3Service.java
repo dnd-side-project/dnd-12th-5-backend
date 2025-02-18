@@ -1,20 +1,22 @@
 package com.picktory.domain.gift.service;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.config.auth.AuthenticationService;
-import com.picktory.domain.gift.dto.s3.PresignedUrlResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.core.sync.RequestBody;
 
-import java.time.Duration;
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,59 +26,92 @@ public class S3Service {
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
-    private final S3Presigner s3Presigner;
+    @Value("${aws.s3.region}")
+    private String region;
+
+    private final S3Client s3Client;
     private final AuthenticationService authenticationService;
 
-    // 허용된 확장자 목록 (jpg, jpeg, png, webp)
-    private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
+    // 허용된 이미지 타입 목록
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+            "image/heif"
+    );
 
     /**
-     * Presigned URL 리스트 생성 요청
+     * 여러 개의 이미지 업로드 처리
      */
-    public List<PresignedUrlResponse> generatePresignedUrls(int count, String fileExtension) {
-        // 현재 로그인한 사용자 가져오기
+    public List<String> uploadImages(List<MultipartFile> files) {
         Long userId = authenticationService.getAuthenticatedUser().getId();
 
-        // 개수 검증
-        if (count < 1 || count > 5) {
-            throw new IllegalArgumentException("이미지 개수는 최소 1개, 최대 5개여야 합니다.");
+        if (files.isEmpty() || files.size() > 5) {
+            throw new BaseException(BaseResponseStatus.GIFT_IMAGE_COUNT);
         }
 
-        // 확장자 검증
-        final String normalizedExtension = fileExtension.toLowerCase();
-        if (!ALLOWED_EXTENSIONS.contains(normalizedExtension)) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 확장자입니다: " + normalizedExtension);
-        }
-
-        log.info("S3 Presigned URL {}개 생성 시작 for userId: {}, 확장자: {}", count, userId, normalizedExtension);
-
-        return IntStream.range(0, count)
-                .mapToObj(i -> createPresignedUrl(userId, normalizedExtension))
-                .toList();
+        return files.stream()
+                .map(file -> uploadFileToS3(file, userId))
+                .collect(Collectors.toList());
     }
 
     /**
-     * Presigned URL 생성 로직
+     * 개별 이미지 파일을 S3에 업로드하고, DB에 저장할 URL 반환
      */
-    private PresignedUrlResponse createPresignedUrl(Long userId, String fileExtension) {
-        // 사용자 ID 기반으로 S3 파일 경로 설정
-        String fileName = String.format("gifts/users/%d/%s.%s", userId, UUID.randomUUID(), fileExtension);
+    private String uploadFileToS3(MultipartFile file, Long userId) {
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new BaseException(BaseResponseStatus.INVALID_GIFT_IMAGE_TYPE);
+        }
 
-        PutObjectRequest objectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(fileName)
-                .build();
+        String originalFilename = file.getOriginalFilename();
+        String extension = getFileExtension(originalFilename);
+        if (extension == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_GIFT_IMAGE_TYPE);
+        }
 
-        // Presigned URL 생성
-        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(
-                PutObjectPresignRequest.builder()
-                        .signatureDuration(Duration.ofHours(24)) // 24시간 유효
-                        .putObjectRequest(objectRequest)
-                        .build()
-        );
+        // S3에 저장될 파일 경로 생성
+        String filePath = getFilePath(userId, extension);
 
-        log.info("Presigned URL 생성 완료 - 파일명: {}", fileName);
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(filePath)
+                    .contentType(contentType)
+                    .build();
 
-        return new PresignedUrlResponse(presignedRequest.url().toString(), 86400);
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+
+            // DB에 저장할 URL 반환
+            return getFileUrl(filePath);
+        } catch (IOException e) {
+            log.error("S3 업로드 실패: {}", e.getMessage(), e);
+            throw new BaseException(BaseResponseStatus.SERVER_ERROR);
+        }
+    }
+
+    /**
+     * S3에 저장될 파일 경로 생성
+     */
+    private String getFilePath(Long userId, String extension) {
+        return String.format("gifts/users/%d/%s.%s", userId, UUID.randomUUID(), extension);
+    }
+
+    /**
+     * DB에 저장될 S3 접근 가능한 URL 생성
+     */
+    private String getFileUrl(String filePath) {
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, filePath);
+    }
+
+    /**
+     * 파일 확장자 추출
+     */
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return null;
+        }
+        return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
     }
 }
