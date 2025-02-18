@@ -16,6 +16,7 @@ public class BundleMainListResponse {
     private String name;
     private DesignType designType;
     private LocalDateTime updatedAt;
+    private Boolean isRead;
 
     public static BundleMainListResponse fromEntity(Bundle bundle) {
         return BundleMainListResponse.builder()
@@ -23,6 +24,7 @@ public class BundleMainListResponse {
                 .name(bundle.getName())
                 .designType(bundle.getDesignType())
                 .updatedAt(bundle.getUpdatedAt())
+                .isRead(bundle.getIsRead())
                 .build();
     }
 
