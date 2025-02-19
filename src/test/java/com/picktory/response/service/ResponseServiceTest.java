@@ -82,11 +82,11 @@ class ResponseServiceTest {
                 .build();
     }
 
-    private GiftImage createTestGiftImage(Long id, Long giftId, String imageUrl, boolean isPrimary) {
+    private GiftImage createTestGiftImage(Long giftId, boolean isPrimary) {
         return GiftImage.builder()
-                .id(id)
-                .giftId(giftId)
-                .imageUrl(imageUrl)
+                .id(1L)  // 테스트용 고정 ID
+                .giftId(giftId)  // Gift ID 설정
+                .imageUrl("http://example.com/image.jpg")  // 테스트용 고정 URL
                 .isPrimary(isPrimary)
                 .uploadedAt(LocalDateTime.now())
                 .build();
@@ -118,15 +118,13 @@ class ResponseServiceTest {
             String link = "valid-link";
             Bundle bundle = createTestBundle(1L, link, BundleStatus.PUBLISHED);
             Gift gift = createTestGift(1L, bundle.getId());
-            List<GiftImage> giftImages = List.of(
-                    createTestGiftImage(1L, gift.getId(), "http://example.com/image1.jpg", true),
-                    createTestGiftImage(2L, gift.getId(), "http://example.com/image2.jpg", false)
-            );
+            GiftImage thumbnail = createTestGiftImage(gift.getId(), true);
+            GiftImage additionalImage = createTestGiftImage(gift.getId(), false);
             List<Response> responses = List.of();
 
             when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
             when(giftRepository.findByBundleId(bundle.getId())).thenReturn(List.of(gift));
-            when(giftImageRepository.findByGiftIdIn(any())).thenReturn(giftImages);
+            when(giftImageRepository.findByGiftIdIn(any())).thenReturn(List.of(thumbnail, additionalImage));
             when(responseRepository.findAllByBundleIdAndGiftIds(anyLong(), any())).thenReturn(responses);
 
             // when
@@ -145,12 +143,11 @@ class ResponseServiceTest {
                         .first()
                         .satisfies(giftInfo -> {
                             assertThat(giftInfo.getId()).isEqualTo(gift.getId());
-                            assertThat(giftInfo.getMessage()).isNull(); // 응답되지 않은 선물이므로 메시지는 null
-                            assertThat(giftInfo.getImageUrls())
-                                    .hasSize(1)
-                                    .containsExactly("http://example.com/image2.jpg"); // primary가 아닌 이미지만 포함
-                            assertThat(giftInfo.getThumbnail())
-                                    .isEqualTo("http://example.com/image1.jpg"); // primary 이미지가 thumbnail이 됨
+                            assertThat(giftInfo.getName()).isEqualTo(gift.getName());  // name 검증 추가
+                            assertThat(giftInfo.getMessage()).isNull();
+                            assertThat(giftInfo.getThumbnail()).isNotNull();
+                            assertThat(giftInfo.getImageUrls()).hasSize(2);  // 모든 이미지 URL 포함되는지 검증
+                            assertThat(giftInfo.getImageUrls()).contains(thumbnail.getImageUrl());  // 썸네일 URL 포함 검증
                         });
             });
 

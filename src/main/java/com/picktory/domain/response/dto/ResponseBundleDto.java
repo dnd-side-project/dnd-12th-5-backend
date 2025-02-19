@@ -29,28 +29,30 @@ public class ResponseBundleDto {
         private Long id;
         private String message;
         private List<String> imageUrls;
+        private String name;
         private String thumbnail;
     }
 
     public static ResponseBundleDto fromEntity(Bundle bundle, List<Gift> gifts, List<GiftImage> images) {
         List<GiftInfo> giftInfos = gifts.stream()
                 .map(gift -> {
+                    // 해당 선물의 이미지들 찾기
                     List<GiftImage> giftImages = images.stream()
                             .filter(img -> img.getGiftId().equals(gift.getId()))
                             .collect(Collectors.toList());
 
+                    // 이미지가 있는 경우 첫 번째 이미지를 썸네일로 사용
+                    String thumbnail = giftImages.isEmpty() ? null :
+                            giftImages.get(0).getImageUrl();
+
                     return GiftInfo.builder()
                             .id(gift.getId())
-                            .message(null) // 선물이 열리기 전에는 null
+                            .name(gift.getName())  // name 필드 추가
+                            .message(null)
                             .imageUrls(giftImages.stream()
-                                    .filter(img -> !img.getIsPrimary())
                                     .map(GiftImage::getImageUrl)
                                     .collect(Collectors.toList()))
-                            .thumbnail(giftImages.stream()
-                                    .filter(GiftImage::getIsPrimary)
-                                    .findFirst()
-                                    .map(GiftImage::getImageUrl)
-                                    .orElse(null))
+                            .thumbnail(thumbnail)
                             .build();
                 })
                 .collect(Collectors.toList());
