@@ -1,5 +1,6 @@
 package com.picktory.domain.gift.dto;
 
+import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
 import lombok.Builder;
@@ -13,9 +14,10 @@ import java.util.stream.Collectors;
 @Getter
 @Builder
 public class DraftGiftsResponse {
+    private Long bundleId;
     private List<GiftDetailResponse> gifts;
 
-    public static DraftGiftsResponse from(List<Gift> gifts, List<GiftImage> images) {
+    public static DraftGiftsResponse from(Long bundleId, List<Gift> gifts, List<GiftImage> images) {
         // 선물 ID별로 이미지 그룹화
         Map<Long, List<GiftImage>> giftImagesMap = images.stream()
                 .collect(Collectors.groupingBy(
@@ -50,6 +52,7 @@ public class DraftGiftsResponse {
                 .collect(Collectors.toList());
 
         return DraftGiftsResponse.builder()
+                .bundleId(bundleId)
                 .gifts(giftResponses)
                 .build();
     }

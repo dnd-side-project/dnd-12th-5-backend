@@ -538,6 +538,6 @@ public class BundleService {
                 gifts.stream().map(Gift::getId).collect(Collectors.toList())
         );
 
-        return DraftGiftsResponse.from(bundle, gifts, images);  // Bundle 객체 전달
+        return DraftGiftsResponse.from(bundle.getId(), gifts, images); // (수정) bundleId도 전달
     }
 }
