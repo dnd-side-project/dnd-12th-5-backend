@@ -16,12 +16,14 @@ import com.picktory.domain.response.dto.SaveGiftResponsesResponse;
 import com.picktory.domain.response.entity.Response;
 import com.picktory.domain.response.repository.ResponseRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResponseService {
@@ -114,15 +116,29 @@ public class ResponseService {
 
     private void saveResponses(Long bundleId, List<SaveGiftResponsesRequest.GiftResponse> giftResponses) {
         List<Response> responses = giftResponses.stream()
-                .map(giftResponse -> Response.builder()
-                        .giftId(giftResponse.getGiftId())
-                        .bundleId(bundleId)
-                        .responseTag(validateAndParseResponseTag(giftResponse.getResponseTag()))
-                        .build())
+                .map(giftResponse -> {
+                    GiftResponseTag giftResponseTagTag = validateAndParseResponseTag(giftResponse.getResponseTag());
+
+                    // Gift 엔티티의 responseTag도 업데이트하도록 수정
+                    Gift gift = giftRepository.findById(giftResponse.getGiftId())
+                            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_GIFT_ID));
+
+                    log.debug("Updating giftId: {} with responseTag: {}", gift.getId(), giftResponseTagTag);
+
+                    gift.updateResponse(giftResponseTagTag);
+                    giftRepository.save(gift);
+
+                    return Response.builder()
+                            .giftId(gift.getId())
+                            .bundleId(bundleId)
+                            .responseTag(giftResponseTagTag)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         responseRepository.saveAll(responses);
     }
+
 
     private GiftResponseTag validateAndParseResponseTag(String responseTag) {
         try {
