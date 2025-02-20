@@ -28,16 +28,12 @@ public class DraftGiftsResponse {
                     // 해당 선물의 이미지 목록 가져오기
                     List<GiftImage> giftImages = giftImagesMap.getOrDefault(gift.getId(), Collections.emptyList());
 
-                    // 대표 이미지(썸네일) 찾기
-                    String thumbnail = giftImages.stream()
-                            .filter(GiftImage::getIsPrimary)
-                            .findFirst()
-                            .map(GiftImage::getImageUrl)
-                            .orElse(null);
+                    // 이미지가 있는 경우 첫 번째 이미지를 썸네일로 사용
+                    String thumbnail = giftImages.isEmpty() ? null :
+                            giftImages.get(0).getImageUrl();
 
-                    // 나머지 이미지 URL 목록
+                    // 모든 이미지 URL 목록
                     List<String> imageUrls = giftImages.stream()
-                            .filter(image -> !image.getIsPrimary())
                             .map(GiftImage::getImageUrl)
                             .collect(Collectors.toList());
 
