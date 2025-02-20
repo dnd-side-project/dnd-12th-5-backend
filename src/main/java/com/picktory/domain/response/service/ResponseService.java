@@ -158,14 +158,15 @@ public class ResponseService {
         );
     }
 
+    // PUBLISHED 및 COMPLETED 시에도 정상 처리
     private void validateBundleStatus(Bundle bundle) {
         switch (bundle.getStatus()) {
             case DRAFT -> throw new BaseException(BaseResponseStatus.NOT_DELIVERED_YET);
-            case COMPLETED -> throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
-            case PUBLISHED -> { /* 정상 처리 */ }
+            case PUBLISHED, COMPLETED -> { /* 정상 처리 */ }
             default -> throw new BaseException(BaseResponseStatus.INVALID_LINK);
         }
     }
+
 
     private void updateGiftResponseStatus(List<Gift> gifts, List<Response> responses) {
         List<Long> respondedGiftIds = responses.stream()
