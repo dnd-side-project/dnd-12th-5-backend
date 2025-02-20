@@ -29,6 +29,10 @@ public class S3Service {
     @Value("${aws.s3.region}")
     private String region;
 
+    @Value("${aws.cloudfront.domain}")
+    private String cloudFrontDomain;
+
+
     private final S3Client s3Client;
     private final AuthenticationService authenticationService;
 
@@ -102,7 +106,8 @@ public class S3Service {
      * DB에 저장될 S3 접근 가능한 URL 생성
      */
     private String getFileUrl(String filePath) {
-        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, filePath);
+//        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, filePath);
+        return String.format("https://%s/%s", cloudFrontDomain, filePath);
     }
 
     /**
