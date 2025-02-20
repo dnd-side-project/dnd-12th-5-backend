@@ -48,7 +48,7 @@ public class ResponseBundleDto {
                     return GiftInfo.builder()
                             .id(gift.getId())
                             .name(gift.getName())  // name 필드 추가
-                            .message(null)
+                            .message(gift.getMessage())
                             .imageUrls(giftImages.stream()
                                     .map(GiftImage::getImageUrl)
                                     .collect(Collectors.toList()))
