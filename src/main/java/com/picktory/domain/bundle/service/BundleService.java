@@ -57,13 +57,14 @@ public class BundleService {
     public BundleResponse createBundle(BundleRequest request) {
         User currentUser = authenticationService.getAuthenticatedUser();
 
-        // 하루 보따리 생성 개수 제한 검사
-        long todayBundleCount = bundleRepository.countByUserIdAndCreatedAtAfter(
-                currentUser.getId(), LocalDateTime.now().toLocalDate().atStartOfDay()
-        );
-        if (todayBundleCount >= 10) {
-            throw new BaseException(BaseResponseStatus.BUNDLE_DAILY_LIMIT_EXCEEDED);
-        }
+        // 프론트 테스트 위해 하루 보따리 생성 개수 테스트 비활성화
+//        // 하루 보따리 생성 개수 제한 검사
+//        long todayBundleCount = bundleRepository.countByUserIdAndCreatedAtAfter(
+//                currentUser.getId(), LocalDateTime.now().toLocalDate().atStartOfDay()
+//        );
+//        if (todayBundleCount >= 10) {
+//            throw new BaseException(BaseResponseStatus.BUNDLE_DAILY_LIMIT_EXCEEDED);
+//        }
 
         // 보따리 유효성 검증
         validateBundleRequest(request);
