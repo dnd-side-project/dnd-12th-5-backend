@@ -79,4 +79,10 @@ public class Gift {
         this.purchaseUrl = request.getPurchaseUrl();
 
     }
+
+    // 응답 상태 및 태그 변경 메서드 추가
+    public void updateResponse(GiftResponseTag responseTag) {
+        this.responseTag = responseTag;
+        this.isResponsed = true;
+    }
 }
