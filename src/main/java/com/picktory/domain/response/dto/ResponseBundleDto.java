@@ -16,6 +16,7 @@ public class ResponseBundleDto {
     @Getter
     @Builder
     public static class BundleInfo {
+        private Long id;
         private String delivery_character_type;
         private String status;
         private String design_type;
@@ -59,6 +60,7 @@ public class ResponseBundleDto {
 
         return ResponseBundleDto.builder()
                 .bundle(BundleInfo.builder()
+                        .id(bundle.getId())
                         .delivery_character_type(bundle.getDeliveryCharacterType().name())
                         .design_type(bundle.getDesignType().name())
                         .status(bundle.getStatus().name())
