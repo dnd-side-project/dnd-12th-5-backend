@@ -42,8 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.startsWith("/kakao/callback") ||
                 path.equals("/favicon.ico") ||
                 path.equals("/default-ui.css") ||
-                path.startsWith("/api/v1/responses/bundles/") ||
-                path.startsWith("/api/v1/gifts/");
+                path.startsWith("/api/v1/responses/bundles/");
         log.debug("Should not filter request: {}", shouldNotFilter);
         return shouldNotFilter;
     }
