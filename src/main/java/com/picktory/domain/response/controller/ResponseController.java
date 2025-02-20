@@ -22,7 +22,7 @@ public class ResponseController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
-    @PostMapping("/gifts/{link}/answers")
+    @PostMapping("/responses/bundles/{link}/answers")
     public ResponseEntity<BaseResponse<SaveGiftResponsesResponse>> saveGiftResponses(
             @PathVariable String link,
             @RequestBody SaveGiftResponsesRequest request) {
