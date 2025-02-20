@@ -25,6 +25,9 @@ public class S3Config {
     @Value("${aws.s3.secret-key:}")
     private String secretKey;
 
+    @Value("${aws.cloudfront.domain}")
+    private String cloudFrontDomain;
+
     /**
      * S3Client Bean 생성 (IAM Role → Access Key 순으로 인증)
      */
