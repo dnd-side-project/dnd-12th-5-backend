@@ -381,7 +381,7 @@ public class BundleService {
         log.info("보따리 삭제 완료 - bundleId: {}", bundleId);
     }
 
-     /**
+    /**
      * 보따리 결과 조회
      */
     public BundleResultResponse getBundleResult(Long bundleId) {
@@ -493,6 +493,7 @@ public class BundleService {
         log.debug("{} - [id: {}] name: {}, message: {}, purchaseUrl: {}",
                 prefix, gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl());
     }
+
     /**
      * 보따리 개별 선물 조회
      */
@@ -537,6 +538,6 @@ public class BundleService {
                 gifts.stream().map(Gift::getId).collect(Collectors.toList())
         );
 
-        return DraftGiftsResponse.from(gifts, images);
+        return DraftGiftsResponse.from(bundle, gifts, images);  // Bundle 객체 전달
     }
 }
