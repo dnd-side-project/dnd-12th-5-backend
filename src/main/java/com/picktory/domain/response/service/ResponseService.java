@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ResponseService {
     private final BundleRepository bundleRepository;
     private final GiftRepository giftRepository;
     private final GiftImageRepository giftImageRepository;
     private final ResponseRepository responseRepository;
 
+    @Transactional(readOnly = true)
     public ResponseBundleDto getBundleByLink(String link) {
         Bundle bundle = findBundleByLink(link);
         validateBundleStatus(bundle);
