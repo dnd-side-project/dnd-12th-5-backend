@@ -21,7 +21,7 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final Key key;
-    private final long VALID_MILISECOND = 1000L * 60 * 60; // 1시간
+    private final long VALID_MILISECOND = 1000L * 60 * 60 * 24; // 24시간
     private static final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24; // 24시간
     private static final String BEARER_PREFIX = "Bearer ";
 
