@@ -1,6 +1,7 @@
 package com.picktory.domain.bundle.dto;
 
 import com.picktory.domain.bundle.entity.Bundle;
+import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DesignType;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class BundleMainListResponse {
                 .name(bundle.getName())
                 .designType(bundle.getDesignType())
                 .updatedAt(bundle.getUpdatedAt())
-                .isRead(bundle.getIsRead())
+                .isRead(bundle.getStatus() == BundleStatus.COMPLETED && !bundle.getIsRead() ? false : true)
                 .build();
     }
 
