@@ -32,6 +32,7 @@ public class ResponseBundleDto {
         private List<String> imageUrls;
         private String name;
         private String thumbnail;
+        private String responseTag;
     }
 
     public static ResponseBundleDto fromEntity(Bundle bundle, List<Gift> gifts, List<GiftImage> images) {
@@ -54,6 +55,7 @@ public class ResponseBundleDto {
                                     .map(GiftImage::getImageUrl)
                                     .collect(Collectors.toList()))
                             .thumbnail(thumbnail)
+                            .responseTag(gift.getResponseTag() != null ? gift.getResponseTag().name() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
