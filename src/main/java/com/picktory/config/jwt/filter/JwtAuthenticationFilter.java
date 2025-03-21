@@ -31,7 +31,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 필터링하지 않을 공개 경로 목록
     private static final List<String> PUBLIC_PATHS = Arrays.asList(
             "/",
-            "/api/v1",
             "/api/v1/oauth/login",
             "/api/v1/auth/backup",
             "/swagger-ui",
