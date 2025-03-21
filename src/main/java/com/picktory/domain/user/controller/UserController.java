@@ -1,46 +1,57 @@
 package com.picktory.domain.user.controller;
 
-import com.picktory.domain.user.dto.UserLoginRequest;
-import com.picktory.domain.user.dto.UserLoginResponse;
+import com.picktory.common.BaseResponse;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.service.UserService;
-import com.picktory.common.BaseResponse;
-import com.picktory.common.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 사용자 관련 API 컨트롤러
+/**
+ * 사용자 관련 API 컨트롤러
+ */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class UserController {
+
     private final UserService userService;
 
-    // 카카오 소셜 로그인
-    @PostMapping("/oauth/login")
-    public BaseResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
-        UserLoginResponse response = userService.login(request.getCode());
-        return new BaseResponse<>(response);
-    }
-
-    // 내정보 조회
+    /**
+     * 내 정보 조회 API
+     *
+     * @return 사용자 정보 응답
+     */
     @GetMapping("/user/me")
-    public BaseResponse<UserResponse> getMyInfo() {
+    public ResponseEntity<BaseResponse<UserResponse>> getMyInfo() {
+        log.info("Get my info request received");
         UserResponse response = userService.getMyInfo();
-        return new BaseResponse<>(response);
+        return ResponseEntity.ok(BaseResponse.success(response, "내 정보 조회 성공"));
     }
 
-    // 회원 탈퇴
+    /**
+     * 회원 탈퇴 API
+     *
+     * @return 성공 응답
+     */
     @DeleteMapping("/user/me")
-    public BaseResponse<Void> withdraw() {
+    public ResponseEntity<BaseResponse<Void>> withdraw() {
+        log.info("Withdraw request received");
         userService.withdraw();
-        return new BaseResponse<>(BaseResponseStatus.SUCCESS);
+        return ResponseEntity.ok(BaseResponse.success(null, "회원 탈퇴 성공"));
     }
-    
-    // 로그아웃
+
+    /**
+     * 로그아웃 API
+     *
+     * @return 성공 응답
+     */
     @PostMapping("/oauth/logout")
-    public BaseResponse<Void> logout() {
+    public ResponseEntity<BaseResponse<Void>> logout() {
+        log.info("Logout request received");
         userService.logout();
-        return new BaseResponse<>(BaseResponseStatus.SUCCESS);
+        return ResponseEntity.ok(BaseResponse.success(null, "로그아웃 성공"));
     }
 }
