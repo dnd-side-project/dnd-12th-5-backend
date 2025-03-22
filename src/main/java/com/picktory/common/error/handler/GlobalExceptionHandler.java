@@ -2,6 +2,7 @@ package com.picktory.common.error.handler;
 
 import com.picktory.common.BaseResponse;
 import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,5 +57,17 @@ public class GlobalExceptionHandler {
         log.error("서버 오류 발생: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new BaseResponse<>(BaseResponseStatus.INTERNAL_SERVER_ERROR));
+    }
+
+
+    /**
+     * BaseException (커스텀 예외) 처리
+     */
+    @ExceptionHandler(BaseException.class)
+    public ResponseEntity<BaseResponse<?>> handleBaseException(BaseException e) {
+        log.warn("BaseException 발생: {}", e.getMessage());
+        return ResponseEntity
+                .status(e.getStatus().getCode())  // 예외에 지정된 HTTP 상태 코드 반환
+                .body(new BaseResponse<>(e.getStatus()));
     }
 }
