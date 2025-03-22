@@ -261,9 +261,8 @@ public class BundleService {
      * 사용자의 보따리 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<BundleListResponse> getUserBundles() {
-        User currentUser = authenticationService.getAuthenticatedUser();
-        List<Bundle> bundles = bundleRepository.findByUserIdOrderByUpdatedAtDesc(currentUser.getId());
+    public List<BundleListResponse> getMyBundles(User user) {
+        List<Bundle> bundles = bundleRepository.findByUserIdOrderByUpdatedAtDesc(user.getId());
         return BundleListResponse.fromEntityList(bundles);
     }
 
