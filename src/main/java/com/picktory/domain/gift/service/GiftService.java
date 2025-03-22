@@ -2,6 +2,7 @@ package com.picktory.domain.gift.service;
 
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
+import com.picktory.domain.bundle.dto.BundleResultGiftResponse;
 import com.picktory.domain.gift.dto.GiftImageRequest;
 import com.picktory.domain.gift.dto.GiftUpdateRequest;
 import com.picktory.domain.gift.entity.Gift;
@@ -90,6 +91,30 @@ public class GiftService {
             giftImageRepository.saveAll(newImages);
         }
     }
+
+    public void deleteAllGiftsAndImagesByBundleId(Long bundleId) {
+        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+        List<Long> giftIds = gifts.stream().map(Gift::getId).toList();
+
+        if (!giftIds.isEmpty()) {
+            giftImageRepository.deleteByGiftIds(giftIds);
+            giftRepository.deleteAll(gifts);
+        }
+    }
+
+    public List<BundleResultGiftResponse> getGiftResultResponsesByBundleId(Long bundleId) {
+        List<Gift> gifts = getGiftsByBundleId(bundleId);
+
+        return gifts.stream()
+                .map(gift -> {
+                    GiftImage primary = getPrimaryImageByGiftId(gift.getId())
+                            .orElseGet(() -> getImagesByGiftId(gift.getId()).stream().findFirst().orElse(null));
+                    return BundleResultGiftResponse.from(gift, primary);
+                })
+                .toList();
+    }
+
+
 
     public List<GiftImage> createGiftImagesWithPrimary(List<? extends GiftImageRequest> giftRequests, List<Gift> savedGifts) {
         List<GiftImage> images = new ArrayList<>();
