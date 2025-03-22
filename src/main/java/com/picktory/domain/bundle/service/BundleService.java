@@ -263,7 +263,7 @@ public class BundleService {
     @Transactional(readOnly = true)
     public List<BundleListResponse> getMyBundles(User user) {
         List<Bundle> bundles = bundleRepository.findByUserIdOrderByUpdatedAtDesc(user.getId());
-        return BundleListResponse.fromEntityList(bundles);
+        return BundleListResponse.listFrom(bundles);
     }
 
     /**
@@ -273,7 +273,7 @@ public class BundleService {
     public List<BundleMainListResponse> getUserMainBundles() {
         User currentUser = authenticationService.getAuthenticatedUser();
         List<Bundle> bundles = bundleRepository.findTop8ByUser_IdOrderByUpdatedAtDesc(currentUser.getId());
-        return BundleMainListResponse.fromEntityList(bundles);
+        return BundleMainListResponse.listFrom(bundles);
     }
 
     /**

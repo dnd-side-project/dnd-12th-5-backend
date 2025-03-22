@@ -11,25 +11,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
-@Builder
-public class BundleMainListResponse {
-    private Long id;
-    private String name;
-    private DesignType designType;
-    private LocalDateTime updatedAt;
-    private Boolean isRead;
-
-    public static BundleMainListResponse fromEntity(Bundle bundle) {
-        return BundleMainListResponse.builder()
-                .id(bundle.getId())
-                .name(bundle.getName())
-                .designType(bundle.getDesignType())
-                .updatedAt(bundle.getUpdatedAt())
-                .isRead(bundle.getStatus() == BundleStatus.COMPLETED && !bundle.getIsRead() ? false : true)
-                .build();
+public class BundleMainListResponse extends BundleDto {
+    public BundleMainListResponse(Bundle bundle) {
+        super(bundle);
+        this.isRead = bundle.getStatus() == BundleStatus.COMPLETED && !bundle.getIsRead() ? false : true;
     }
 
-    public static List<BundleMainListResponse> fromEntityList(List<Bundle> bundles) {
-        return bundles.stream().map(BundleMainListResponse::fromEntity).collect(Collectors.toList());
+    public static List<BundleMainListResponse> listFrom(List<Bundle> bundles) {
+        return bundles.stream()
+                .map(BundleMainListResponse::new)
+                .collect(Collectors.toList());
     }
 }
+
