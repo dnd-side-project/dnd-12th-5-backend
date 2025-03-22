@@ -70,13 +70,7 @@ public class BundleService {
         validateBundleRequest(request);
 
         // 1. 보따리 저장
-        Bundle bundle = bundleRepository.save(Bundle.builder()
-                .userId(currentUser.getId())
-                .name(request.getName())
-                .designType(request.getDesignType())
-                .status(BundleStatus.DRAFT)
-                .isRead(false)
-                .build());
+        Bundle bundle = bundleRepository.save(request.toEntity(currentUser.getId()));
 
         // 2. 선물 저장 (Gift 먼저 저장, ID 생성)
         List<Gift> gifts = request.getGifts().stream()

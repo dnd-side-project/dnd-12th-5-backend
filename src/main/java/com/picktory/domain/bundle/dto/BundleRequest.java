@@ -1,5 +1,7 @@
 package com.picktory.domain.bundle.dto;
 
+import com.picktory.domain.bundle.entity.Bundle;
+import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.bundle.enums.DesignType;
 import com.picktory.domain.gift.dto.GiftRequest;
@@ -27,4 +29,14 @@ public class BundleRequest {
     @NotNull
     @Size(min = 2)
     private List<GiftRequest> gifts;
+
+    public Bundle toEntity(Long userId) {
+        return Bundle.builder()
+                .userId(userId)
+                .name(this.name)
+                .designType(this.designType)
+                .status(BundleStatus.DRAFT)
+                .isRead(false)
+                .build();
+    }
 }
