@@ -19,6 +19,7 @@ import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
 import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
+import com.picktory.domain.gift.service.GiftService;
 import com.picktory.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,7 @@ public class BundleService {
     private final GiftRepository giftRepository;
     private final GiftImageRepository giftImageRepository;
     private final AuthenticationService authenticationService;
+    private final GiftService giftService;
 
     /**
      * 보따리 생성
@@ -72,15 +74,15 @@ public class BundleService {
         // 1. 보따리 저장
         Bundle bundle = bundleRepository.save(request.toEntity(currentUser));
 
-        // 2. 선물 저장 (Gift 먼저 저장, ID 생성)
+        // 2. 선물 저장
         List<Gift> gifts = request.getGifts().stream()
                 .map(giftRequest -> Gift.createGift(bundle.getId(), giftRequest))
                 .toList();
-        List<Gift> savedGifts = giftRepository.saveAll(gifts); // Gift 먼저 저장
+        List<Gift> savedGifts = giftService.saveGifts(gifts);
 
-        // 3. 선물 이미지 저장 (Gift ID가 존재하는 상태에서 저장)
-        List<GiftImage> newImages = setPrimaryImage(request.getGifts(), savedGifts);
-        giftImageRepository.saveAll(newImages);
+        // 3. 선물 이미지 저장
+        List<GiftImage> newImages = giftService.createGiftImagesWithPrimary(request.getGifts(), savedGifts);
+        giftService.saveGiftImages(newImages);
 
         return BundleResponse.fromEntity(bundle, savedGifts, newImages);
     }
@@ -92,100 +94,22 @@ public class BundleService {
     public BundleResponse updateBundle(Long bundleId, BundleUpdateRequest request) {
         log.info("보따리 업데이트 요청: bundleId = {}", bundleId);
 
-        // 1. 현재 사용자 정보 조회
         User currentUser = authenticationService.getAuthenticatedUser();
-
-        // 2. 보따리 유효성 검사 및 조회
         Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+
         if (bundle.getStatus() != BundleStatus.DRAFT) {
             throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_DRAFT);
         }
 
-        // 3. 기존 선물 조회
-        List<Gift> existingGifts = giftRepository.findByBundleId(bundleId);
-        Map<Long, Gift> existingGiftMap = existingGifts.stream()
-                .collect(Collectors.toMap(Gift::getId, gift -> gift));
+        // 1. 기존 선물 업데이트 처리 (삭제/수정/추가 + 이미지 포함)
+        giftService.updateGifts(bundle.getId(), request.getGifts());
 
-        // 4. 기존 선물 이미지 삭제 (대표 이미지 처리 문제 방지)
-        deleteAllGiftImages(existingGifts);
-        log.info("기존 선물 이미지 삭제 완료");
-
-        // 5. 기존 선물 중 요청에서 빠진 선물 삭제
-        List<Long> receivedGiftIds = request.getGifts().stream()
-                .map(GiftUpdateRequest::getId)
-                .filter(Objects::nonNull)
-                .toList();
-        List<Gift> giftsToDelete = existingGifts.stream()
-                .filter(gift -> !receivedGiftIds.contains(gift.getId()))
-                .toList();
-        deleteGifts(giftsToDelete);
-        log.info("삭제된 선물 수: {}", giftsToDelete.size());
-
-        // 6. 삭제되지 않은 기존 선물 리스트 생성
-        List<Gift> remainingGifts = existingGifts.stream()
-                .filter(gift -> !giftsToDelete.contains(gift))
-                .toList();
-
-        // 7. 기존 선물 이미지 업데이트 (삭제되지 않은 기존 선물 대상)
-        List<GiftImage> newImages = processGiftImages(request.getGifts(), remainingGifts);
-        giftImageRepository.saveAll(newImages);
-        log.info("기존 선물 이미지 재생성 완료, 저장된 이미지 수: {}", newImages.size());
-
-        // 8. 요청된 선물들을 순회하며 수정 또는 추가 처리
-        List<Gift> updatedGifts = new ArrayList<>();
-        List<Gift> newGifts = new ArrayList<>();
-        List<GiftImage> newGiftImages = new ArrayList<>();
-
-        for (GiftUpdateRequest giftRequest : request.getGifts()) {
-            if (giftRequest.getId() != null && existingGiftMap.containsKey(giftRequest.getId())) {
-                // 기존 선물 업데이트 확인 후 수정
-                Gift existingGift = existingGiftMap.get(giftRequest.getId());
-                if (!isGiftUnchanged(existingGift, giftRequest)) {
-                    existingGift.updateGift(giftRequest);
-                    updatedGifts.add(existingGift);
-                }
-            } else {
-                // 새로운 선물 저장 (DB 반영 후, ID 획득)
-                Gift persistedGift = giftRepository.save(Gift.createGift(bundle.getId(), giftRequest));
-                newGifts.add(persistedGift);
-
-                // 새 선물의 이미지 저장
-                List<String> newImageUrls = giftRequest.getImageUrls();
-                if (newImageUrls == null || newImageUrls.isEmpty()) {
-                    throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
-                }
-
-                // 첫 번째 이미지는 대표 이미지
-                newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(0), true));
-
-                // 나머지 이미지는 일반 이미지
-                for (int i = 1; i < newImageUrls.size(); i++) {
-                    newGiftImages.add(GiftImage.createGiftImage(persistedGift, newImageUrls.get(i), false));
-                }
-            }
-        }
-
-        // 9. 기존 선물 변경 사항 저장
-        if (!updatedGifts.isEmpty()) {
-            giftRepository.saveAll(updatedGifts);
-        }
-
-        // 10. 새로운 선물의 이미지 저장
-        if (!newGiftImages.isEmpty()) {
-            giftImageRepository.saveAll(newGiftImages);
-        }
-
-        log.info("수정된 선물 수: {}, 추가된 선물 수: {}, 추가된 이미지 수: {}",
-                updatedGifts.size(), newGifts.size(), newGiftImages.size());
-
-        // 11. 최종 저장된 선물, 이미지 데이터 조회
-        List<Gift> savedGifts = giftRepository.findByBundleId(bundleId);
-        List<GiftImage> savedImages = giftImageRepository.findByGiftIdIn(
-                savedGifts.stream().map(Gift::getId).toList());
-
-        // 12. 최종 응답 반환 (DB에서 저장된 데이터 기반)
+        // 2. 최종 저장된 선물, 이미지 조회
+        List<Gift> savedGifts = giftService.getGiftsByBundleId(bundleId);
+        List<GiftImage> savedImages = giftService.getImagesByGiftIds(
+                savedGifts.stream().map(Gift::getId).toList()
+        );
         return BundleResponse.fromEntity(bundle, savedGifts, savedImages);
-
     }
 
     /**
