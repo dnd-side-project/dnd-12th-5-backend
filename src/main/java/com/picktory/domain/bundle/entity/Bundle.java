@@ -5,6 +5,7 @@ import com.picktory.common.exception.BaseException;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.bundle.enums.DesignType;
+import com.picktory.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -22,8 +23,9 @@ public class Bundle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId; // 연관관계 없이 userId 저장
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false, length = 100)
     private String name; // 보따리 이름

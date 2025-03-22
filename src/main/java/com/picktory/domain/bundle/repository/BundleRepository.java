@@ -25,8 +25,8 @@ public interface BundleRepository extends JpaRepository<Bundle, Long> {
     /**
      * 특정 사용자의 보따리를 최신 업데이트순으로 8개만 조회
      */
-    @Query("SELECT b FROM Bundle b WHERE b.userId = :userId ORDER BY b.updatedAt DESC LIMIT 8")
-    List<Bundle> findTop8ByUserIdOrderByUpdatedAtDesc(Long userId);
+    List<Bundle> findTop8ByUser_IdOrderByUpdatedAtDesc(Long userId);
+
 
     Optional<Bundle> findByIdAndStatus(Long id, BundleStatus status);
 }

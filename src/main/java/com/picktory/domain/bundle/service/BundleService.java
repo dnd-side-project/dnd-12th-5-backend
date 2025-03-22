@@ -70,7 +70,7 @@ public class BundleService {
         validateBundleRequest(request);
 
         // 1. 보따리 저장
-        Bundle bundle = bundleRepository.save(request.toEntity(currentUser.getId()));
+        Bundle bundle = bundleRepository.save(request.toEntity(currentUser));
 
         // 2. 선물 저장 (Gift 먼저 저장, ID 생성)
         List<Gift> gifts = request.getGifts().stream()
@@ -96,11 +96,7 @@ public class BundleService {
         User currentUser = authenticationService.getAuthenticatedUser();
 
         // 2. 보따리 유효성 검사 및 조회
-        Bundle bundle = bundleRepository.findById(bundleId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
-        if (!bundle.getUserId().equals(currentUser.getId())) {
-            throw new BaseException(BaseResponseStatus.FORBIDDEN);
-        }
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
         if (bundle.getStatus() != BundleStatus.DRAFT) {
             throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_DRAFT);
         }
@@ -277,7 +273,7 @@ public class BundleService {
     @Transactional(readOnly = true)
     public List<BundleMainListResponse> getUserMainBundles() {
         User currentUser = authenticationService.getAuthenticatedUser();
-        List<Bundle> bundles = bundleRepository.findTop8ByUserIdOrderByUpdatedAtDesc(currentUser.getId());
+        List<Bundle> bundles = bundleRepository.findTop8ByUser_IdOrderByUpdatedAtDesc(currentUser.getId());
         return BundleMainListResponse.fromEntityList(bundles);
     }
 
@@ -340,17 +336,10 @@ public class BundleService {
      */
     @Transactional
     public void deleteBundle(Long bundleId) {
-        Long userId = authenticationService.getAuthenticatedUser().getId();
+        User currentUser = authenticationService.getAuthenticatedUser();
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
 
-        // 보따리 조회 (사용자가 소유한 보따리인지 확인)
-        Bundle bundle = bundleRepository.findById(bundleId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
-
-        if (!bundle.getUserId().equals(userId)) {
-            throw new BaseException(BaseResponseStatus.FORBIDDEN);
-        }
-
-        log.info("보따리 삭제 시작 - bundleId: {}, userId: {}", bundleId, userId);
+        log.info("보따리 삭제 시작 - bundleId: {}, userId: {}", bundleId, currentUser.getId());
 
         // 보따리에 속한 선물들 조회
         List<Gift> gifts = giftRepository.findByBundleId(bundleId);
@@ -387,8 +376,8 @@ public class BundleService {
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
 
         // 본인 보따리인지 확인
-        if (!bundle.getUserId().equals(currentUser.getId())) {
-            throw new BaseException(BaseResponseStatus.BUNDLE_ACCESS_DENIED);
+        if (!bundle.getUser().getId().equals(currentUser.getId())) {
+            throw new BaseException(BaseResponseStatus.FORBIDDEN);
         }
 
         // 보따리에 포함된 선물 목록을 직접 조회
@@ -418,7 +407,7 @@ public class BundleService {
         Bundle bundle = bundleRepository.findById(bundleId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
 
-        if (!bundle.getUserId().equals(currentUser.getId())) {
+        if (!bundle.getUser().getId().equals(currentUser.getId())) {
             throw new BaseException(BaseResponseStatus.FORBIDDEN);
         }
 
@@ -440,8 +429,8 @@ public class BundleService {
     private Bundle validateAndGetBundle(Long bundleId, User currentUser) {
         Bundle bundle = bundleRepository.findById(bundleId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
-        if (!bundle.getUserId().equals(currentUser.getId())) {
-            throw new BaseException(BaseResponseStatus.BUNDLE_ACCESS_DENIED);
+        if (!bundle.getUser().getId().equals(currentUser.getId())) {
+            throw new BaseException(BaseResponseStatus.FORBIDDEN);
         }
         return bundle;
     }

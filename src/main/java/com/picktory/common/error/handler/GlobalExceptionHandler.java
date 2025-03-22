@@ -2,6 +2,7 @@ package com.picktory.common.error.handler;
 
 import com.picktory.common.BaseResponse;
 import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
