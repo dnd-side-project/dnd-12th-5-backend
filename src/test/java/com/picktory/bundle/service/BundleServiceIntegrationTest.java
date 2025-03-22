@@ -112,7 +112,7 @@ class BundleServiceIntegrationTest {
         assertThat(savedBundle.getStatus()).isEqualTo(BundleStatus.DRAFT);
 
         // 선물 및 이미지 데이터 검증
-        List<Gift> savedGifts = giftRepository.findByBundleId(savedBundle.getId());
+        List<Gift> savedGifts = giftRepository.findAllByBundleId(savedBundle.getId());
         assertThat(savedGifts).hasSize(3);
 
         List<GiftImage> savedImages = giftImageRepository.findAll();

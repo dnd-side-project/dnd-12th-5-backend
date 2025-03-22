@@ -9,36 +9,25 @@ import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
 import com.picktory.domain.bundle.dto.BundleRequest;
 import com.picktory.domain.bundle.dto.BundleResponse;
 
-import com.picktory.domain.bundle.dto.*;
-
 import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.gift.dto.*;
 import com.picktory.domain.gift.entity.Gift;
 import com.picktory.domain.gift.entity.GiftImage;
-import com.picktory.domain.gift.repository.GiftImageRepository;
-import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.gift.service.GiftService;
 import com.picktory.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
@@ -48,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 public class BundleService {
 
     private final BundleRepository bundleRepository;
-    private final GiftRepository giftRepository;
-    private final GiftImageRepository giftImageRepository;
     private final AuthenticationService authenticationService;
     private final GiftService giftService;
 
@@ -110,74 +97,6 @@ public class BundleService {
                 savedGifts.stream().map(Gift::getId).toList()
         );
         return BundleResponse.fromEntity(bundle, savedGifts, savedImages);
-    }
-
-    /**
-     * 업데이트 목록에 포함되지 않은 기존 선물 삭제
-     */
-    private void deleteGifts(List<Gift> giftsToDelete) {
-        if (!giftsToDelete.isEmpty()) {
-            List<Long> giftIdsToDelete = giftsToDelete.stream().map(Gift::getId).toList();
-            giftRepository.deleteAll(giftsToDelete);
-            log.info("삭제된 선물 수: {}", giftIdsToDelete.size());
-        }
-    }
-
-    /**
-     * 기존 선물 이미지 모두 삭제
-     */
-    private void deleteAllGiftImages(List<Gift> existingGifts) {
-        List<Long> existingGiftIds = existingGifts.stream()
-                .map(Gift::getId)
-                .toList();
-        if (!existingGiftIds.isEmpty()) {
-            giftImageRepository.deleteByGiftIds(existingGiftIds);
-            log.info("기존 선물 이미지 삭제 완료: {}", existingGiftIds.size());
-        }
-    }
-
-    /**
-     * 선물 수정 여부 판단 (imageurls 제외)
-     */
-    private boolean isGiftUnchanged(Gift existingGift, GiftUpdateRequest newGift) {
-        return existingGift.getName().equals(newGift.getName()) &&
-                Objects.equals(existingGift.getMessage(), newGift.getMessage()) &&
-                Objects.equals(existingGift.getPurchaseUrl(), newGift.getPurchaseUrl());
-    }
-
-    /**
-     * 업데이트 목록에 포함된 기존 선물의 이미지 저장
-     */
-    private List<GiftImage> processGiftImages(List<GiftUpdateRequest> giftRequests, List<Gift> remainingGifts) {
-        List<GiftImage> newImages = new ArrayList<>();
-
-        // 요청된 선물 리스트를 Map으로 변환
-        Map<Long, GiftUpdateRequest> giftRequestMap = giftRequests.stream()
-                .filter(req -> req.getId() != null) // 기존 선물만 매핑
-                .collect(Collectors.toMap(GiftUpdateRequest::getId, req -> req));
-
-        for (Gift gift : remainingGifts) {
-            GiftUpdateRequest giftRequest = giftRequestMap.get(gift.getId());
-
-            if (giftRequest == null) {
-                log.error("기존 선물 ID {}에 대한 요청 데이터가 없음", gift.getId());
-                throw new BaseException(BaseResponseStatus.INVALID_GIFT_UPDATE);
-            }
-
-            List<String> newImageUrls = giftRequest.getImageUrls();
-            if (newImageUrls == null || newImageUrls.isEmpty()) {
-                throw new BaseException(BaseResponseStatus.GIFT_IMAGE_REQUIRED);
-            }
-
-            // 대표 이미지 저장
-            newImages.add(GiftImage.createGiftImage(gift, newImageUrls.get(0), true));
-
-            // 나머지 이미지 저장
-            for (int i = 1; i < newImageUrls.size(); i++) {
-                newImages.add(GiftImage.createGiftImage(gift, newImageUrls.get(i), false));
-            }
-        }
-        return newImages;
     }
 
 
@@ -296,29 +215,40 @@ public class BundleService {
     @Transactional
     public BundleSummaryResponse getBundle(Long bundleId) {
         User currentUser = authenticationService.getAuthenticatedUser();
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
 
-        // 보따리 조회 및 사용자 검증
-        Bundle bundle = bundleRepository.findById(bundleId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.BUNDLE_NOT_FOUND));
-
-        if (!bundle.getUser().getId().equals(currentUser.getId())) {
-            throw new BaseException(BaseResponseStatus.FORBIDDEN);
-        }
-
-        // 보따리에 포함된 선물 목록 조회
-        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
-
-        // 각 선물의 대표 이미지 가져오기
-        List<GiftImage> images = giftImageRepository.findByGiftIdIn(gifts.stream().map(Gift::getId).toList());
-
-        // 최초 조회 시 isRead 업데이트
         if (bundle.getStatus() == BundleStatus.COMPLETED && !bundle.getIsRead()) {
             bundle.markAsRead();
         }
 
-        return BundleSummaryResponse.fromEntity(bundle, gifts, images);
+        return giftService.getGiftSummary(bundle);
     }
 
+    /**
+     * 보따리 개별 선물 조회
+     */
+    @Transactional(readOnly = true)
+    public GiftDetailResponse getGift(Long bundleId, Long giftId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+        return giftService.getGiftDetail(bundleId, giftId);
+    }
+
+
+    /**
+     * 임시 저장된 보따리의 선물 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public DraftGiftsResponse getDraftGifts(Long bundleId) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+
+        if (bundle.getStatus() != BundleStatus.DRAFT) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
+        }
+
+        return giftService.getDraftGifts(bundleId);
+    }
 
     private Bundle validateAndGetBundle(Long bundleId, User currentUser) {
         Bundle bundle = bundleRepository.findById(bundleId)
@@ -343,26 +273,6 @@ public class BundleService {
         gifts.forEach(gift -> logGiftDetails("최종 저장 선물", gift));
     }
 
-    private List<Long> getReceivedGiftIds(BundleUpdateRequest request) {
-        return request.getGifts().stream()
-                .map(GiftUpdateRequest::getId)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private List<Gift> getGiftsToDelete(List<Gift> existingGifts, List<Long> receivedGiftIds) {
-        return existingGifts.stream()
-                .filter(gift -> !receivedGiftIds.contains(gift.getId()))
-                .toList();
-    }
-
-    private void validateFinalGiftCount(BundleUpdateRequest request, List<Long> receivedGiftIds) {
-        long finalGiftCount = receivedGiftIds.size() + (request.getGifts().size() - receivedGiftIds.size());
-        if (finalGiftCount < 2) {
-            throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
-        }
-    }
-
     private String generateDeliveryLink() {
         return UUID.randomUUID().toString();
     }
@@ -370,52 +280,5 @@ public class BundleService {
     private void logGiftDetails(String prefix, Gift gift) {
         log.debug("{} - [id: {}] name: {}, message: {}, purchaseUrl: {}",
                 prefix, gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl());
-    }
-
-    /**
-     * 보따리 개별 선물 조회
-     */
-    @Transactional(readOnly = true)
-    public GiftDetailResponse getGift(Long bundleId, Long giftId) {
-        User currentUser = authenticationService.getAuthenticatedUser();
-
-        // 보따리 존재 및 권한 확인
-        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
-
-        // 선물 조회
-        Gift gift = giftRepository.findByIdAndBundleId(giftId, bundleId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.GIFT_NOT_FOUND));
-
-        // 이미지 조회
-        List<GiftImage> images = giftImageRepository.findByGiftId(giftId);
-
-        return GiftDetailResponse.fromEntity(gift, images);
-    }
-
-
-    /**
-     * 임시 저장된 보따리의 선물 목록 조회
-     */
-    @Transactional(readOnly = true)
-    public DraftGiftsResponse getDraftGifts(Long bundleId) {
-        User currentUser = authenticationService.getAuthenticatedUser();
-
-        // 보따리 존재 및 권한 확인
-        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
-
-        // DRAFT 상태 확인
-        if (bundle.getStatus() != BundleStatus.DRAFT) {
-            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS);
-        }
-
-        // 선물 목록 조회
-        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
-
-        // 선물 이미지 조회
-        List<GiftImage> images = giftImageRepository.findByGiftIds(
-                gifts.stream().map(Gift::getId).collect(Collectors.toList())
-        );
-
-        return DraftGiftsResponse.from(bundle.getId(), gifts, images); // (수정) bundleId도 전달
     }
 }
