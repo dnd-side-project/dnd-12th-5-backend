@@ -35,4 +35,18 @@ public class BaseResponse<T> {
         this.code = code;
         this.message = message;
     }
+
+    // 성공 응답을 쉽게 생성하기 위한 정적 메서드 추가
+    public static <T> BaseResponse<T> success(T result, String message) {
+        return new BaseResponse<>(true, 200, message, result);
+    }
+
+    // 위 메서드에서 사용할 추가 생성자
+    public BaseResponse(boolean isSuccess, int code, String message, T result) {
+        this.isSuccess = isSuccess;
+        this.code = code;
+        this.message = message;
+        this.result = result;
+    }
+
 }
