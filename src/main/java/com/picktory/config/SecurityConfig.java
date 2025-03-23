@@ -1,9 +1,9 @@
 package com.picktory.config;
 
-import com.picktory.config.jwt.filter.JwtAuthenticationFilter;
-import com.picktory.config.jwt.filter.JwtExceptionFilter;
-import com.picktory.config.jwt.handler.JwtAccessDeniedHandler;
-import com.picktory.config.jwt.handler.JwtAuthenticationEntryPoint;
+import com.picktory.domain.auth.jwt.filter.JwtAuthenticationFilter;
+import com.picktory.domain.auth.jwt.filter.JwtExceptionFilter;
+import com.picktory.domain.auth.jwt.handler.JwtAccessDeniedHandler;
+import com.picktory.domain.auth.jwt.handler.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

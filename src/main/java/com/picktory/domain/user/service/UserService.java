@@ -2,11 +2,11 @@ package com.picktory.domain.user.service;
 
 import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponseStatus;
-import com.picktory.domain.refreshToken.service.RefreshTokenService;
+import com.picktory.domain.auth.refresh.service.RefreshTokenService;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
-import com.picktory.domain.user.service.auth.KakaoService;
+import com.picktory.domain.auth.oauth.client.KakaoClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final KakaoService kakaoService;
+    private final KakaoClient kakaoClient;
     private final RefreshTokenService refreshTokenService;
 
     /**
@@ -52,10 +52,10 @@ public class UserService {
 
         try {
             // 1. 카카오 계정 연결 해제
-            kakaoService.unlinkKakaoAccount(user.getKakaoId());
+            kakaoClient.unlinkKakaoAccount(user.getKakaoId());
 
             // 2. 리프레시 토큰 삭제
-            refreshTokenService.deleteByUserId(user.getId().toString());
+            refreshTokenService.deleteByUserId(user.getId());
 
             // 3. 사용자 삭제 처리
             user.delete();
@@ -80,7 +80,7 @@ public class UserService {
             log.info("User logged out: {}", userId);
 
             // 리프레시 토큰 삭제
-            refreshTokenService.deleteByUserId(userId);
+            refreshTokenService.deleteByUserId(Long.parseLong(userId));
         }
 
         // 보안 컨텍스트 초기화

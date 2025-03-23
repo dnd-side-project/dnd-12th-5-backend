@@ -1,11 +1,11 @@
 package com.picktory.user.service;
 
-import com.picktory.domain.refreshToken.service.RefreshTokenService;
+import com.picktory.domain.auth.refresh.service.RefreshTokenService;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
 import com.picktory.domain.user.service.UserService;
-import com.picktory.domain.user.service.auth.KakaoService;
+import com.picktory.domain.auth.oauth.client.KakaoClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
@@ -31,7 +30,7 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private KakaoService kakaoService;
+    private KakaoClient kakaoClient;
 
     @Mock
     private RefreshTokenService refreshTokenService;
@@ -55,7 +54,7 @@ class UserServiceTest {
         assertNull(SecurityContextHolder.getContext().getAuthentication());
 
         // 리프레시 토큰 삭제 확인
-        verify(refreshTokenService).deleteByUserId("1");
+        verify(refreshTokenService).deleteByUserId(1L);
     }
 
     /**
@@ -120,8 +119,8 @@ class UserServiceTest {
         assertThat(user.getDeletedAt()).isNotNull();
 
         // 카카오 계정 연결 해제 및 리프레시 토큰 삭제 확인
-        verify(kakaoService).unlinkKakaoAccount(12345L);
-        verify(refreshTokenService).deleteByUserId("1");
+        verify(kakaoClient).unlinkKakaoAccount(12345L);
+        verify(refreshTokenService).deleteByUserId(1L);
     }
 
     /**

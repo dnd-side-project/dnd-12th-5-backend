@@ -1,15 +1,15 @@
 package com.picktory.user.service;
 
-import com.picktory.config.jwt.JwtTokenProvider;
-import com.picktory.config.jwt.dto.TokenDto;
-import com.picktory.domain.oauth.dto.KakaoUserInfo;
-import com.picktory.domain.refreshToken.entity.RefreshToken;
-import com.picktory.domain.refreshToken.service.RefreshTokenService;
+import com.picktory.domain.auth.jwt.JwtTokenProvider;
+import com.picktory.domain.auth.dto.TokenDto;
+import com.picktory.domain.auth.oauth.dto.KakaoUserInfo;
+import com.picktory.domain.auth.refresh.entity.RefreshToken;
+import com.picktory.domain.auth.refresh.service.RefreshTokenService;
 import com.picktory.domain.user.dto.UserLoginResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
-import com.picktory.domain.user.service.auth.AuthService;
-import com.picktory.domain.user.service.auth.KakaoService;
+import com.picktory.domain.auth.service.AuthService;
+import com.picktory.domain.auth.oauth.client.KakaoClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     @Mock
-    private KakaoService kakaoService;
+    private KakaoClient kakaoClient;
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
@@ -65,8 +65,8 @@ class AuthServiceTest {
                 .build();
 
         // 모킹 설정
-        when(kakaoService.getKakaoAccessToken(code)).thenReturn(kakaoAccessToken);
-        when(kakaoService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(kakaoClient.getKakaoAccessToken(code)).thenReturn(kakaoAccessToken);
+        when(kakaoClient.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.getId())).thenReturn(Optional.empty());
 
         // 신규 유저 저장 시 JPA가 ID를 할당하는 동작을 모방 (리플렉션 사용)
@@ -85,7 +85,7 @@ class AuthServiceTest {
                 .refreshToken("refresh-token")
                 .accessTokenExpiresIn(new Date(System.currentTimeMillis() + 3600 * 1000))
                 .build();
-        when(jwtTokenProvider.generateToken(anyString())).thenReturn(tokenDto);
+        when(jwtTokenProvider.generateToken(anyLong())).thenReturn(tokenDto);
 
         // 실행
         UserLoginResponse response = authService.loginWithKakao(code);
@@ -96,12 +96,12 @@ class AuthServiceTest {
         assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
 
         // 메소드 호출 검증
-        verify(kakaoService).getKakaoAccessToken(code);
-        verify(kakaoService).getKakaoUserInfo(kakaoAccessToken);
+        verify(kakaoClient).getKakaoAccessToken(code);
+        verify(kakaoClient).getKakaoUserInfo(kakaoAccessToken);
         verify(userRepository).findByKakaoId(kakaoUserInfo.getId());
         verify(userRepository).save(any(User.class));
-        verify(jwtTokenProvider).generateToken("1");
-        verify(refreshTokenService).createRefreshToken(eq("1"), eq("refresh-token"), any(LocalDateTime.class));
+        verify(jwtTokenProvider).generateToken(1L);
+        verify(refreshTokenService).createRefreshToken(eq(1L), eq("refresh-token"), any(LocalDateTime.class));
     }
 
     /**
@@ -135,8 +135,8 @@ class AuthServiceTest {
         idField.set(existingUser, 1L);
 
         // 모킹 설정
-        when(kakaoService.getKakaoAccessToken(code)).thenReturn(kakaoAccessToken);
-        when(kakaoService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(kakaoClient.getKakaoAccessToken(code)).thenReturn(kakaoAccessToken);
+        when(kakaoClient.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.getId())).thenReturn(Optional.of(existingUser));
 
         // JWT 토큰 생성 모킹
@@ -146,7 +146,7 @@ class AuthServiceTest {
                 .refreshToken("existing-refresh-token")
                 .accessTokenExpiresIn(new Date(System.currentTimeMillis() + 3600 * 1000))
                 .build();
-        when(jwtTokenProvider.generateToken("1")).thenReturn(tokenDto);
+        when(jwtTokenProvider.generateToken(1L)).thenReturn(tokenDto);
 
         // 실행
         UserLoginResponse response = authService.loginWithKakao(code);
@@ -158,8 +158,8 @@ class AuthServiceTest {
 
         // 메소드 호출 검증
         verify(userRepository, never()).save(any(User.class));
-        verify(jwtTokenProvider).generateToken("1");
-        verify(refreshTokenService).createRefreshToken(eq("1"), eq("existing-refresh-token"), any(LocalDateTime.class));
+        verify(jwtTokenProvider).generateToken(1L);
+        verify(refreshTokenService).createRefreshToken(eq(1L), eq("existing-refresh-token"), any(LocalDateTime.class));
     }
 
     /**
@@ -169,7 +169,7 @@ class AuthServiceTest {
     void testRefreshToken() throws Exception {
         // 테스트 데이터 설정
         String refreshTokenStr = "valid-refresh-token";
-        String userId = "1";
+        Long userId = 1L;
 
         // 리프레시 토큰 엔티티 설정
         RefreshToken refreshTokenEntity = RefreshToken.builder()
