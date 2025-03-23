@@ -1,6 +1,8 @@
 package com.picktory.domain.user.entity;
 
 import com.picktory.common.BaseEntity;
+import com.picktory.common.exception.BaseException;
+import com.picktory.common.BaseResponseStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -37,7 +39,7 @@ public class User extends BaseEntity {
 
     public void delete() {
         if (this.isDeleted) {
-            throw new IllegalStateException("이미 탈퇴한 사용자입니다.");
+            throw new BaseException(BaseResponseStatus.ALREADY_DELETED_USER);
         }
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();

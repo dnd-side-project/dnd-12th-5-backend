@@ -1,5 +1,7 @@
 package com.picktory.domain.auth.controller;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponse;
 import com.picktory.domain.user.dto.UserLoginRequest;
 import com.picktory.domain.user.dto.UserLoginResponse;
@@ -28,9 +30,18 @@ public class AuthController {
      */
     @PostMapping("/oauth/login")
     public ResponseEntity<BaseResponse<UserLoginResponse>> login(@RequestBody UserLoginRequest request) {
-        log.info("Login request received with code");
-        UserLoginResponse response = authService.loginWithKakao(request.getCode());
-        return ResponseEntity.ok(BaseResponse.success(response, "로그인 성공"));
+        try {
+            log.info("Login request received with code");
+            UserLoginResponse response = authService.loginWithKakao(request.getCode());
+            return ResponseEntity.ok(BaseResponse.success(response, "로그인 성공"));
+        } catch (BaseException e) {
+            return ResponseEntity.status(e.getStatus().getCode())
+                    .body(new BaseResponse<>(e.getStatus()));
+        } catch (Exception e) {
+            log.error("Login error:", e);
+            return ResponseEntity.internalServerError()
+                    .body(new BaseResponse<>(BaseResponseStatus.SERVER_ERROR));
+        }
     }
 
     /**
@@ -41,8 +52,17 @@ public class AuthController {
      */
     @PostMapping("/auth/refresh")
     public ResponseEntity<BaseResponse<UserLoginResponse>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
-        log.info("Token refresh request received");
-        UserLoginResponse response = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(BaseResponse.success(response, "토큰 갱신 성공"));
+        try {
+            log.info("Token refresh request received");
+            UserLoginResponse response = authService.refreshToken(refreshToken);
+            return ResponseEntity.ok(BaseResponse.success(response, "토큰 갱신 성공"));
+        } catch (BaseException e) {
+            return ResponseEntity.status(e.getStatus().getCode())
+                    .body(new BaseResponse<>(e.getStatus()));
+        } catch (Exception e) {
+            log.error("Token refresh error:", e);
+            return ResponseEntity.internalServerError()
+                    .body(new BaseResponse<>(BaseResponseStatus.SERVER_ERROR));
+        }
     }
 }
