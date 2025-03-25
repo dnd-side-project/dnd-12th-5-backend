@@ -1,10 +1,12 @@
 package com.picktory.domain.bundle.entity;
 
+import com.picktory.common.BaseEntity;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.bundle.enums.DeliveryCharacterType;
 import com.picktory.domain.bundle.enums.DesignType;
+import com.picktory.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,14 +18,15 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Bundle {
+public class Bundle extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId; // 연관관계 없이 userId 저장
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false, length = 100)
     private String name; // 보따리 이름
@@ -42,30 +45,13 @@ public class Bundle {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private BundleStatus status = BundleStatus.DRAFT; // 기본값 설정
+    private BundleStatus status = BundleStatus.DRAFT;
 
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
+    private LocalDateTime publishedAt;
 
-    @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    private LocalDateTime updatedAt;
-
-    private LocalDateTime publishedAt; // PUBLISHED 상태가 되었을 때
-
-    @Column(nullable = false)
     @Builder.Default
-    private Boolean isRead = false; // 응답 확인 여부 (기본값: false)
+    private Boolean isRead = false;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 
     /**
      * 배달부 캐릭터 설정

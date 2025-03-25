@@ -85,7 +85,7 @@ public class ResponseService {
                 .map(SaveGiftResponsesRequest.GiftResponse::getGiftId)
                 .collect(Collectors.toSet());
 
-        List<Gift> gifts = giftRepository.findByBundleId(bundleId);
+        List<Gift> gifts = giftRepository.findAllByBundleId(bundleId);
 
         Set<Long> existingGiftIds = gifts.stream()
                 .map(Gift::getId)
@@ -154,11 +154,11 @@ public class ResponseService {
     }
 
     private List<Gift> findGiftsByBundleId(Long bundleId) {
-        return giftRepository.findByBundleId(bundleId);
+        return giftRepository.findAllByBundleId(bundleId);
     }
 
     private List<GiftImage> findGiftImages(List<Gift> gifts) {
-        return giftImageRepository.findByGiftIdIn(
+        return giftImageRepository.findAllByGift_IdIn(
                 gifts.stream()
                         .map(Gift::getId)
                         .collect(Collectors.toList())

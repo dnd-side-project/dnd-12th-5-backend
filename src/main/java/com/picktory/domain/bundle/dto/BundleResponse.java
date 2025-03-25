@@ -36,7 +36,7 @@ public class BundleResponse {
     public static BundleResponse fromEntity(Bundle bundle, List<Gift> gifts, List<GiftImage> images) {
         return BundleResponse.builder()
                 .id(bundle.getId())
-                .userId(bundle.getUserId())
+                .userId(bundle.getUser().getId())
                 .name(bundle.getName())
                 .designType(bundle.getDesignType())
                 .deliveryCharacterType(bundle.getDeliveryCharacterType())
