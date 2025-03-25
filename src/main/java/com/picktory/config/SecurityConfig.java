@@ -1,15 +1,16 @@
 package com.picktory.config;
 
-import com.picktory.config.jwt.JwtAuthenticationFilter;
-import java.util.Arrays;
-import java.util.List;
+import com.picktory.domain.auth.jwt.filter.JwtAuthenticationFilter;
+import com.picktory.domain.auth.jwt.filter.JwtExceptionFilter;
+import com.picktory.domain.auth.jwt.handler.JwtAccessDeniedHandler;
+import com.picktory.domain.auth.jwt.handler.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,36 +21,60 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtExceptionFilter jwtExceptionFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     private static final String API_V1 = "/api/v1/";
-    private static final List<String> ALLOWED_ORIGINS = List.of(
-            "https://picktory.net",
-            "https://www.picktory.net",
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "https://api.picktory.net/",
-            "https://api.picktory.net"
-    );
-    private static final List<String> ALLOWED_HEADERS = Arrays.asList(
-            "Origin",
-            "Content-Type",
-            "Accept",
-            "Authorization",
-            "X-Requested-With"
-    );
-    private static final List<String> ALLOWED_METHODS = Arrays.asList(
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "OPTIONS"
-    );
+
+    private enum CorsConfig {
+        INSTANCE;
+
+        private final List<String> ALLOWED_ORIGINS = List.of(
+                "https://picktory.net",
+                "https://www.picktory.net",
+                "http://localhost:3000",
+                "http://localhost:8080",
+                "https://api.picktory.net/",
+                "https://api.picktory.net"
+        );
+
+        private final List<String> ALLOWED_HEADERS = List.of(
+                "Origin",
+                "Content-Type",
+                "Accept",
+                "Authorization",
+                "X-Requested-With"
+        );
+
+        private final List<String> ALLOWED_METHODS = List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+        );
+
+        public List<String> getAllowedOrigins() {
+            return ALLOWED_ORIGINS;
+        }
+
+        public List<String> getAllowedHeaders() {
+            return ALLOWED_HEADERS;
+        }
+
+        public List<String> getAllowedMethods() {
+            return ALLOWED_METHODS;
+        }
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -59,19 +84,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .headers(header -> header.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(getPublicEndpoints()).permitAll()
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                         .requestMatchers(getAuthenticatedEndpoints()).authenticated()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers(header -> header.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable).disable())
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .formLogin(AbstractHttpConfigurer::disable)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 
@@ -98,9 +128,7 @@ public class SecurityConfig {
                 API_V1 + "oauth/logout",
                 API_V1 + "user/me",
                 API_V1 + "user/me/backup",
-                API_V1 + "bundles",
-                API_V1 + "bundles/main",
-                API_V1 + "bundles/{id}/**",
+                API_V1 + "bundles/**", // 중복 패턴 통합
                 API_V1 + "bundles/{id}/save",
                 API_V1 + "bundles/{id}/gifts/**",
                 API_V1 + "bundles/{id}/delivery",
@@ -111,9 +139,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(ALLOWED_ORIGINS);
-        configuration.setAllowedHeaders(ALLOWED_HEADERS);
-        configuration.setAllowedMethods(ALLOWED_METHODS);
+        configuration.setAllowedOrigins(CorsConfig.INSTANCE.getAllowedOrigins());
+        configuration.setAllowedHeaders(CorsConfig.INSTANCE.getAllowedHeaders());
+        configuration.setAllowedMethods(CorsConfig.INSTANCE.getAllowedMethods());
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
