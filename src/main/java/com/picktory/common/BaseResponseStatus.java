@@ -14,7 +14,11 @@ public enum BaseResponseStatus {
     /**
      * 400: Client 오류 (잘못된 요청)
      */
+    INVALID_USER_ID(false, 401, "유효하지 않은 사용자 ID입니다."),
+    INVALID_ACCESS_TOKEN(false, 401, "액세스 토큰이 비어있습니다."),
+    INVALID_REFRESH_TOKEN(false, 401, "리프레시 토큰이 비어있습니다."),
     INVALID_JWT(false, 401, "유효하지 않은 JWT입니다."),
+    EXPIRED_REFRESHTOKEN(false, 401, "리프레시 토큰이 만료됐으니, 다시 로그인해주세요."),
     INVALID_USER_JWT(false, 403, "권한이 없는 유저의 접근입니다."),
     USER_NOT_FOUND(false, 404, "존재하지 않는 유저입니다."),
     FORBIDDEN(false, 403, "이 리소스에 대한 접근 권한이 없습니다."),

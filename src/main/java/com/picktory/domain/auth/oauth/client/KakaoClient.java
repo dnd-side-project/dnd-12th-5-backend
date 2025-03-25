@@ -1,5 +1,7 @@
 package com.picktory.domain.auth.oauth.client;
 
+import com.picktory.common.exception.BaseException;
+import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.oauth.dto.KakaoTokenResponse;
 import com.picktory.domain.auth.oauth.dto.KakaoUserInfo;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +42,7 @@ public class KakaoClient {
      *
      * @param code 카카오 인증 코드
      * @return 카카오 액세스 토큰
-     * @throws IllegalStateException 토큰 요청 중 오류 발생 시
+     * @throws BaseException 토큰 요청 중 오류 발생 시
      */
     public String getKakaoAccessToken(String code) {
         log.debug("Requesting Kakao access token with code: {}", code);
@@ -65,7 +67,7 @@ public class KakaoClient {
 
             if (response.getBody() == null || response.getBody().getAccess_token() == null) {
                 log.error("Failed to get Kakao access token: empty response");
-                throw new IllegalStateException("카카오 로그인 처리 중 오류가 발생했습니다.");
+                throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
             }
 
             return response.getBody().getAccess_token();
@@ -73,10 +75,12 @@ public class KakaoClient {
         } catch (HttpClientErrorException e) {
             log.error("Kakao token error - Status: {}, Response: {}",
                     e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("다시 로그인해 주세요.");
+            throw new BaseException(BaseResponseStatus.INVALID_JWT);
+        } catch (BaseException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to get Kakao access token", e);
-            throw new IllegalStateException("카카오 로그인 처리 중 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
         }
     }
 
@@ -85,7 +89,7 @@ public class KakaoClient {
      *
      * @param accessToken 카카오 액세스 토큰
      * @return 카카오 사용자 정보
-     * @throws IllegalStateException 사용자 정보 요청 중 오류 발생 시
+     * @throws BaseException 사용자 정보 요청 중 오류 발생 시
      */
     public KakaoUserInfo getKakaoUserInfo(String accessToken) {
         try {
@@ -104,7 +108,7 @@ public class KakaoClient {
 
             if (response.getBody() == null) {
                 log.error("Kakao user info response is empty");
-                throw new IllegalStateException("카카오 API 오류가 발생했습니다.");
+                throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
             }
 
             log.info("카카오 유저 정보를 성공적으로 받음");
@@ -113,10 +117,12 @@ public class KakaoClient {
         } catch (HttpClientErrorException e) {
             log.error("Failed to get Kakao user info - Status: {}, Response: {}",
                     e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("카카오 사용자 정보 조회 중 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
+        } catch (BaseException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error while getting Kakao user info", e);
-            throw new IllegalStateException("카카오 사용자 정보 조회 중 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
         }
     }
 
@@ -124,7 +130,7 @@ public class KakaoClient {
      * 카카오 계정 연결 해제를 요청합니다.
      *
      * @param kakaoId 카카오 사용자 ID
-     * @throws IllegalStateException 연결 해제 중 오류 발생 시
+     * @throws BaseException 연결 해제 중 오류 발생 시
      */
     public void unlinkKakaoAccount(Long kakaoId) {
         try {
@@ -145,7 +151,7 @@ public class KakaoClient {
 
         } catch (Exception e) {
             log.error("Failed to unlink Kakao account: {}", kakaoId, e);
-            throw new IllegalStateException("카카오 계정 연결 해제 중 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.KAKAO_API_ERROR);
         }
     }
 }

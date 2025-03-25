@@ -1,5 +1,7 @@
 package com.picktory.domain.auth.service;
 
+import com.picktory.common.exception.BaseException;
+import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.jwt.JwtTokenProvider;
 import com.picktory.domain.auth.dto.TokenDto;
 import com.picktory.domain.auth.oauth.client.KakaoClient;
@@ -70,12 +72,12 @@ public class AuthService {
 
             return new UserLoginResponse(tokenDto.getAccessToken(), tokenDto.getRefreshToken());
 
-        } catch (IllegalStateException e) {
-            log.error("Login failed with IllegalStateException: {}", e.getMessage());
+        } catch (BaseException e) {
+            log.error("Login failed with BaseException: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error during login", e);
-            throw new IllegalStateException("서버 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.SERVER_ERROR);
         }
     }
 
@@ -90,7 +92,7 @@ public class AuthService {
         try {
             // 1. 리프레시 토큰 검증
             RefreshToken refreshTokenEntity = refreshTokenService.findByToken(refreshToken)
-                    .orElseThrow(() -> new IllegalStateException("유효하지 않은 리프레시 토큰입니다."));
+                    .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_JWT));
 
             // 2. 만료 여부 확인
             refreshTokenService.verifyExpiration(refreshTokenEntity);
@@ -98,7 +100,7 @@ public class AuthService {
             // 3. 사용자 조회
             Long userId = refreshTokenEntity.getUserId();
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
             // 4. 새 액세스 토큰 발급
             TokenDto tokenDto = jwtTokenProvider.generateToken(userId);
@@ -112,9 +114,12 @@ public class AuthService {
             refreshTokenService.createRefreshToken(userId, tokenDto.getRefreshToken(), expiryDate);
 
             return new UserLoginResponse(tokenDto.getAccessToken(), tokenDto.getRefreshToken());
+        } catch (BaseException e) {
+            log.error("Error while refreshing token: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("Error while refreshing token", e);
-            throw new IllegalStateException("토큰 갱신 중 오류가 발생했습니다.");
+            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -129,7 +134,7 @@ public class AuthService {
                 .map(foundUser -> {
                     log.info("Found existing user: {}", foundUser.getId());
                     if (foundUser.isDeleted()) {
-                        throw new IllegalStateException("이미 탈퇴한 사용자입니다.");
+                        throw new BaseException(BaseResponseStatus.ALREADY_DELETED_USER);
                     }
                     return foundUser;
                 })

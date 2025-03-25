@@ -1,5 +1,7 @@
 package com.picktory.domain.auth.refresh.service;
 
+import com.picktory.common.exception.BaseException;
+import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.refresh.entity.RefreshToken;
 import com.picktory.domain.auth.refresh.repository.RefreshTokenRepository;
 import com.picktory.domain.auth.refresh.dto.RefreshTokenResponse;
@@ -36,7 +38,7 @@ public class RefreshTokenService {
     public RefreshToken createRefreshToken(Long userId, String token, LocalDateTime expiryDate) {
         // 사용자 존재 여부 확인
         userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
         log.debug("Creating or updating refresh token for user: {}", userId);
 
@@ -84,13 +86,13 @@ public class RefreshTokenService {
      *
      * @param token 확인할 리프레시 토큰 엔티티
      * @return 유효한 리프레시 토큰 엔티티
-     * @throws IllegalStateException 토큰이 만료된 경우
+     * @throws BaseException 토큰이 만료된 경우
      */
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.isExpired()) {
             refreshTokenRepository.delete(token);
-            throw new IllegalStateException("Refresh token was expired. Please make a new signin request");
+            throw new BaseException(BaseResponseStatus.EXPIRED_REFRESHTOKEN);
         }
         return token;
     }
