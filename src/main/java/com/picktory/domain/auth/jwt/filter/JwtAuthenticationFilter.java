@@ -35,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/auth/backup",
             "/api/v1/responses/bundles",
             "/api/v1/responses/bundles/",
+            "/api/v1/responses/bundles/*/answers",
             "/swagger-ui",
             "/v3/api-docs",
             "/favicon.ico",
@@ -45,11 +46,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         log.debug("Current request path: {}", path);
-
+        
         boolean shouldNotFilter = PUBLIC_PATHS.stream()
-                .anyMatch(publicPath -> path.equals(publicPath) ||
-                        (!publicPath.equals("/") && path.startsWith(publicPath)));
-
+                .anyMatch(publicPath -> {
+                    if (path.equals(publicPath)) {
+                        return true;
+                    }
+                    
+                    if (!publicPath.equals("/") && publicPath.contains("*")) {
+                        // 와일드카드 패턴 처리
+                        String regex = publicPath.replace("*", "[^/]+");
+                        return path.matches(regex);
+                    }
+                    
+                    return !publicPath.equals("/") && path.startsWith(publicPath);
+                });
+        
         log.debug("Should not filter request: {}", shouldNotFilter);
         return shouldNotFilter;
     }
