@@ -1,5 +1,7 @@
 package com.picktory.domain.auth.dto;
 
+import com.picktory.common.exception.BaseException;
+import com.picktory.common.BaseResponseStatus;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.util.StringUtils;
@@ -28,10 +30,10 @@ public class TokenDto {
 
     public void validate() {
         if (!StringUtils.hasText(accessToken)) {
-            throw new IllegalArgumentException("Access Token cannot be empty");
+            throw new BaseException(BaseResponseStatus.INVALID_ACCESS_TOKEN);
         }
         if (!StringUtils.hasText(refreshToken)) {
-            throw new IllegalArgumentException("Refresh Token cannot be empty");
+            throw new BaseException(BaseResponseStatus.INVALID_REFRESH_TOKEN);
         }
     }
 }

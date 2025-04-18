@@ -2,6 +2,7 @@ package com.picktory.domain.bundle.controller;
 
 import com.picktory.common.BaseResponse;
 
+import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.*;
 
 import com.picktory.domain.bundle.dto.BundleDeliveryRequest;
@@ -12,6 +13,7 @@ import com.picktory.domain.bundle.dto.BundleUpdateRequest;
 import com.picktory.domain.bundle.service.BundleService;
 import com.picktory.domain.gift.dto.DraftGiftsResponse;
 import com.picktory.domain.gift.dto.GiftDetailResponse;
+import com.picktory.domain.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ import java.util.List;
 public class BundleController {
 
     private final BundleService bundleService;
+    private final AuthenticationService authenticationService;
 
     /**
      * 보따리 최초 생성 API
@@ -54,7 +57,8 @@ public class BundleController {
      */
     @GetMapping
     public ResponseEntity<BaseResponse<List<BundleListResponse>>> getBundles() {
-        List<BundleListResponse> bundles = bundleService.getUserBundles();
+        User currentUser = authenticationService.getAuthenticatedUser();
+        List<BundleListResponse> bundles = bundleService.getMyBundles(currentUser);
         return ResponseEntity.ok(new BaseResponse<>(bundles));
     }
 
