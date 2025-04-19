@@ -24,6 +24,8 @@ public enum BaseResponseStatus {
     FORBIDDEN(false, 403, "이 리소스에 대한 접근 권한이 없습니다."),
     ALREADY_DELETED_USER(false, 410, "이미 탈퇴한 유저입니다."),
 
+
+    INVALID_BUNDLE_ID(false, 400, "유효하지 않은 번들 ID입니다."),
     BUNDLE_DAILY_LIMIT_EXCEEDED(false, 400, "하루에 최대 10개의 보따리만 생성할 수 있습니다."),
     BUNDLE_NAME_REQUIRED(false, 400, "보따리 이름을 입력하세요."),
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
