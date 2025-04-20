@@ -59,15 +59,12 @@ public class AuthService {
             log.info("Login successful for user: {}", user.getId());
 
             // 5. 리프레시 토큰을 DB에 저장
-            LocalDateTime expiryDate = tokenDto.getAccessTokenExpiresIn()
-                    .toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
+            LocalDateTime refreshTokenExpiryDate = LocalDateTime.now().plusDays(7); // 7일 후 만료
 
             refreshTokenService.createRefreshToken(
                     user.getId(),
                     tokenDto.getRefreshToken(),
-                    expiryDate
+                    refreshTokenExpiryDate
             );
 
             return new UserLoginResponse(tokenDto.getAccessToken(), tokenDto.getRefreshToken());
