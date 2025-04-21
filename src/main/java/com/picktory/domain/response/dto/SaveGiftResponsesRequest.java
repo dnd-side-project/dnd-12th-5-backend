@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 public class SaveGiftResponsesRequest {
-    private Long bundleId;
+    private String bundleId;
     private List<GiftResponse> gifts;
 
     @Getter
