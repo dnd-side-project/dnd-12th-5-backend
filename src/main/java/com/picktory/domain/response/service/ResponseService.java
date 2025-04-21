@@ -51,11 +51,6 @@ public class ResponseService {
         // 1. 번들 검증 및 조회
         Bundle bundle = validateAndGetBundle(link);
 
-        // 1-1. bundleId 검증 (요청의 bundleId가 조회된 bundle의 ID와 일치하는지 확인)
-        if (request.getBundleId() != null && !request.getBundleId().equals(bundle.getId())) {
-            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_ID);
-        }
-
         // 2. 선물 목록 검증 및 조회
         List<Gift> gifts = validateAndGetGifts(bundle.getId(), request.getGifts());
 
