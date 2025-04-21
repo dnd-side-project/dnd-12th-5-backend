@@ -87,28 +87,41 @@ public class AuthService {
     @Transactional
     public UserLoginResponse refreshToken(String refreshToken) {
         try {
+            log.debug("Starting token refresh process");
+
             // 1. 리프레시 토큰 검증
+            log.debug("Finding refresh token in database");
             RefreshToken refreshTokenEntity = refreshTokenService.findByToken(refreshToken)
                     .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_JWT));
+            log.debug("Found refresh token: {}", refreshTokenEntity.getId());
 
             // 2. 만료 여부 확인
+            log.debug("Verifying token expiration");
             refreshTokenService.verifyExpiration(refreshTokenEntity);
+            log.debug("Token is not expired");
 
             // 3. 사용자 조회
             Long userId = refreshTokenEntity.getUserId();
+            log.debug("Retrieved user ID: {}", userId);
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            log.debug("Found user: {}", user.getId());
 
             // 4. 새 액세스 토큰 발급
+            log.debug("Generating new tokens");
             TokenDto tokenDto = jwtTokenProvider.generateToken(userId);
+            log.debug("Generated new tokens successfully");
 
             // 5. 리프레시 토큰 업데이트
+            log.debug("Updating refresh token");
             LocalDateTime expiryDate = tokenDto.getAccessTokenExpiresIn()
                     .toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
+            log.debug("Token expiry date: {}", expiryDate);
 
             refreshTokenService.createRefreshToken(userId, tokenDto.getRefreshToken(), expiryDate);
+            log.debug("Refresh token updated successfully");
 
             return new UserLoginResponse(tokenDto.getAccessToken(), tokenDto.getRefreshToken());
         } catch (BaseException e) {
@@ -116,6 +129,9 @@ public class AuthService {
             throw e;
         } catch (Exception e) {
             log.error("Error while refreshing token", e);
+            log.error("Exception type: {}", e.getClass().getName());
+            log.error("Exception message: {}", e.getMessage());
+            log.error("Stack trace: ", e);
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR);
         }
     }
