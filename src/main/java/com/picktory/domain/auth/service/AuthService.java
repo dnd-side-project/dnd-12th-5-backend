@@ -114,10 +114,8 @@ public class AuthService {
 
             // 5. 리프레시 토큰 업데이트
             log.debug("Updating refresh token");
-            LocalDateTime expiryDate = tokenDto.getAccessTokenExpiresIn()
-                    .toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
+            // 이 부분을 수정: 리프레시 토큰 만료 시간을 7일 후로 설정
+            LocalDateTime expiryDate = LocalDateTime.now().plusDays(7); // 7일 후 만료로 수정
             log.debug("Token expiry date: {}", expiryDate);
 
             refreshTokenService.createRefreshToken(userId, tokenDto.getRefreshToken(), expiryDate);
