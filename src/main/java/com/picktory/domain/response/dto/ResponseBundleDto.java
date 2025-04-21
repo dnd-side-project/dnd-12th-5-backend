@@ -17,11 +17,11 @@ public class ResponseBundleDto {
     @Builder
     public static class BundleInfo {
         private Long id;
-        private String deliveryCharacterType;
+        private String delivery_character_type;
         private String status;
-        private String designType;
+        private String design_type;
         private List<GiftInfo> gifts;
-        private int totalGifts;
+        private int total_gifts;
     }
 
     @Getter
@@ -49,7 +49,7 @@ public class ResponseBundleDto {
 
                     return GiftInfo.builder()
                             .id(gift.getId())
-                            .name(gift.getName())
+                            .name(gift.getName())  // name 필드 추가
                             .message(gift.getMessage())
                             .imageUrls(giftImages.stream()
                                     .map(GiftImage::getImageUrl)
@@ -63,11 +63,11 @@ public class ResponseBundleDto {
         return ResponseBundleDto.builder()
                 .bundle(BundleInfo.builder()
                         .id(bundle.getId())
-                        .deliveryCharacterType(bundle.getDeliveryCharacterType().name()) // 필드명 변경
-                        .designType(bundle.getDesignType().name()) // 필드명 변경
+                        .delivery_character_type(bundle.getDeliveryCharacterType().name())
+                        .design_type(bundle.getDesignType().name())
                         .status(bundle.getStatus().name())
                         .gifts(giftInfos)
-                        .totalGifts(gifts.size()) // 필드명 변경
+                        .total_gifts(gifts.size())
                         .build())
                 .build();
     }
