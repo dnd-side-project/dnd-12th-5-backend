@@ -35,6 +35,7 @@ public enum BaseResponseStatus {
     INVALID_GIFT_IMAGE_TYPE(false, 400, "지원되지 않는 이미지 형식입니다. (JPEG, PNG, WebP, HEIC만 허용)"),
 
     BUNDLE_ACCESS_DENIED(false, 403, "보따리 수정 권한이 없습니다."),
+    INVALID_BUNDLE_STATUS_FOR_RESULT(false,400, "아직 완료되지 않은 보따리입니다."),
     BUNDLE_NOT_FOUND(false, 404, "보따리를 찾을 수 없습니다."),
     INVALID_BUNDLE_STATUS(false, 400, "이미 배달이 시작된 보따리입니다."),
     INVALID_CHARACTER_TYPE(false, 400, "유효하지 않은 배달부 캐릭터입니다."),

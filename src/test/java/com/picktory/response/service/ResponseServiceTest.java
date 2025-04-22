@@ -13,6 +13,7 @@ import com.picktory.domain.gift.enums.GiftResponseTag;
 import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.response.dto.ResponseBundleDto;
+import com.picktory.domain.response.dto.ResponseResultDto;
 import com.picktory.domain.response.dto.SaveGiftResponsesRequest;
 import com.picktory.domain.response.dto.SaveGiftResponsesResponse;
 import com.picktory.domain.response.entity.Response;
@@ -81,7 +82,7 @@ class ResponseServiceTest {
                 .name("테스트 선물")
                 .message("테스트 메시지")
                 .purchaseUrl("http://test.com")
-                .responseTag(GiftResponseTag.LIKE)
+                .responseTag(GiftResponseTag.GREAT)
                 .isResponsed(false)
                 .build();
     }
@@ -135,13 +136,13 @@ class ResponseServiceTest {
 
             // then
             assertThat(result.getBundle()).satisfies(bundleInfo -> {
-                assertThat(bundleInfo.getDelivery_character_type())
+                assertThat(bundleInfo.getDeliveryCharacterType())
                         .isEqualTo(DeliveryCharacterType.CHARACTER_1.name());
-                assertThat(bundleInfo.getDesign_type())
+                assertThat(bundleInfo.getDesignType())
                         .isEqualTo(DesignType.RED.name());
                 assertThat(bundleInfo.getStatus())
                         .isEqualTo(BundleStatus.PUBLISHED.name());
-                assertThat(bundleInfo.getTotal_gifts()).isEqualTo(1);
+                assertThat(bundleInfo.getTotalGifts()).isEqualTo(1);
                 assertThat(bundleInfo.getGifts()).hasSize(1)
                         .first()
                         .satisfies(giftInfo -> {
@@ -214,7 +215,7 @@ class ResponseServiceTest {
 
             when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
             when(giftRepository.findAllByBundleId(bundleId)).thenReturn(gifts);
-            when(responseRepository.existsByGiftIdIn(any())).thenReturn(false);
+            when(responseRepository.existsByGiftIdIn(giftIds)).thenReturn(false);
             when(bundleRepository.save(any(Bundle.class))).thenReturn(bundle);
             when(responseRepository.saveAll(any())).thenReturn(List.of());
 
@@ -233,7 +234,7 @@ class ResponseServiceTest {
 
             verify(bundleRepository).findByLink(link);
             verify(giftRepository).findAllByBundleId(bundleId);
-            verify(responseRepository).existsByGiftIdIn(any());
+            verify(responseRepository).existsByGiftIdIn(giftIds);
             verify(responseRepository).saveAll(any());
             verify(bundleRepository).save(any(Bundle.class));
 
@@ -325,6 +326,70 @@ class ResponseServiceTest {
             assertThatThrownBy(() -> responseService.saveGiftResponses(link, request))
                     .isInstanceOf(BaseException.class)
                     .hasFieldOrPropertyWithValue("status", BaseResponseStatus.INCOMPLETE_RESPONSES);
+        }
+    }
+
+    @Nested
+    @DisplayName("선물 응답 결과 조회")
+    class GetResponseResult {
+        @Test
+        @DisplayName("COMPLETED 상태의 보따리 결과를 정상적으로 조회할 수 있다")
+        void success() {
+            // given
+            String link = "completed-link";
+            Bundle bundle = createTestBundle(1L, link, BundleStatus.COMPLETED);
+            Gift gift = createTestGift(1L, bundle.getId());
+            gift.updateResponse(GiftResponseTag.LIKE);
+            GiftImage thumbnail = createTestGiftImage(gift.getId(), true);
+
+            when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
+            when(giftRepository.findAllByBundleId(bundle.getId())).thenReturn(List.of(gift));
+            when(giftImageRepository.findAllByGift_IdIn(any())).thenReturn(List.of(thumbnail));
+
+            // when
+            ResponseResultDto result = responseService.getResponseResult(link);
+
+            // then
+            assertThat(result.getId()).isEqualTo(bundle.getId());
+            assertThat(result.getGifts()).hasSize(1);
+            assertThat(result.getGifts().get(0).getId()).isEqualTo(gift.getId());
+            assertThat(result.getGifts().get(0).getName()).isEqualTo(gift.getName());
+            assertThat(result.getGifts().get(0).getPurchaseUrl()).isEqualTo(gift.getPurchaseUrl());
+            assertThat(result.getGifts().get(0).getResponseTag()).isEqualTo(GiftResponseTag.LIKE.name());
+            assertThat(result.getGifts().get(0).getThumbnail()).isEqualTo(thumbnail.getImageUrl());
+            // 이제 ResponseResultDto에 imageUrls가 추가되었다면 확인 필요
+            assertThat(result.getGifts().get(0).getImageUrls()).contains(thumbnail.getImageUrl());
+
+            verify(bundleRepository).findByLink(link);
+            verify(giftRepository).findAllByBundleId(bundle.getId());
+            verify(giftImageRepository).findAllByGift_IdIn(any());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 링크로 조회시 예외가 발생한다")
+        void fail_whenInvalidLink() {
+            // given
+            String invalidLink = "invalid-link";
+            when(bundleRepository.findByLink(invalidLink)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> responseService.getResponseResult(invalidLink))
+                    .isInstanceOf(BaseException.class)
+                    .hasFieldOrPropertyWithValue("status", BaseResponseStatus.INVALID_LINK);
+        }
+
+        @Test
+        @DisplayName("COMPLETED 상태가 아닌 보따리 조회시 예외가 발생한다")
+        void fail_whenNotCompleted() {
+            // given
+            String link = "published-link";
+            Bundle bundle = createTestBundle(1L, link, BundleStatus.PUBLISHED);
+            when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
+
+            // when & then
+            assertThatThrownBy(() -> responseService.getResponseResult(link))
+                    .isInstanceOf(BaseException.class)
+                    .hasFieldOrPropertyWithValue("status", BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_RESULT);
         }
     }
 }
