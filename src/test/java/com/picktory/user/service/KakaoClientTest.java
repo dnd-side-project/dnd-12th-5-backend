@@ -1,5 +1,7 @@
 package com.picktory.user.service;
 
+import com.picktory.common.BaseResponseStatus;
+import com.picktory.common.exception.BaseException;
 import com.picktory.domain.auth.oauth.dto.KakaoTokenResponse;
 import com.picktory.domain.auth.oauth.dto.KakaoUserInfo;
 import com.picktory.domain.auth.oauth.client.KakaoClient;
@@ -98,11 +100,10 @@ class KakaoClientTest {
         )).thenReturn(responseEntity);
 
         // 실행 및 예외 검증
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        BaseException exception = assertThrows(BaseException.class, () -> {
             kakaoClient.getKakaoAccessToken(code);
         });
-
-        assertThat(exception.getMessage()).contains("카카오 로그인 처리 중 오류가 발생했습니다");
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.KAKAO_API_ERROR);
     }
 
     /**
@@ -122,11 +123,10 @@ class KakaoClientTest {
         )).thenThrow(httpError);
 
         // 실행 및 예외 검증
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        BaseException exception = assertThrows(BaseException.class, () -> {
             kakaoClient.getKakaoAccessToken(code);
         });
-
-        assertThat(exception.getMessage()).contains("다시 로그인해 주세요");
+        assertThat(exception.getStatus()).isEqualTo(BaseResponseStatus.INVALID_JWT);
     }
 
     /**
