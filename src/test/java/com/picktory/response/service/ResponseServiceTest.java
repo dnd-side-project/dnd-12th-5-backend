@@ -136,13 +136,13 @@ class ResponseServiceTest {
 
             // then
             assertThat(result.getBundle()).satisfies(bundleInfo -> {
-                assertThat(bundleInfo.getDelivery_character_type())
+                assertThat(bundleInfo.getDeliveryCharacterType())
                         .isEqualTo(DeliveryCharacterType.CHARACTER_1.name());
-                assertThat(bundleInfo.getDesign_type())
+                assertThat(bundleInfo.getDesignType())
                         .isEqualTo(DesignType.RED.name());
                 assertThat(bundleInfo.getStatus())
                         .isEqualTo(BundleStatus.PUBLISHED.name());
-                assertThat(bundleInfo.getTotal_gifts()).isEqualTo(1);
+                assertThat(bundleInfo.getTotalGifts()).isEqualTo(1);
                 assertThat(bundleInfo.getGifts()).hasSize(1)
                         .first()
                         .satisfies(giftInfo -> {
@@ -356,6 +356,8 @@ class ResponseServiceTest {
             assertThat(result.getGifts().get(0).getPurchaseUrl()).isEqualTo(gift.getPurchaseUrl());
             assertThat(result.getGifts().get(0).getResponseTag()).isEqualTo(GiftResponseTag.GREAT.name());
             assertThat(result.getGifts().get(0).getThumbnail()).isEqualTo(thumbnail.getImageUrl());
+            // 이제 ResponseResultDto에 imageUrls가 추가되었다면 확인 필요
+            assertThat(result.getGifts().get(0).getImageUrls()).contains(thumbnail.getImageUrl());
 
             verify(bundleRepository).findByLink(link);
             verify(giftRepository).findAllByBundleId(bundle.getId());
