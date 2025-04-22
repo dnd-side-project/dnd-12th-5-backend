@@ -2,6 +2,7 @@ package com.picktory.domain.response.controller;
 
 import com.picktory.common.BaseResponse;
 import com.picktory.domain.response.dto.ResponseBundleDto;
+import com.picktory.domain.response.dto.ResponseResultDto;
 import com.picktory.domain.response.dto.SaveGiftResponsesRequest;
 import com.picktory.domain.response.dto.SaveGiftResponsesResponse;
 import com.picktory.domain.response.service.ResponseService;
@@ -29,5 +30,11 @@ public class ResponseController {
         SaveGiftResponsesResponse response = responseService.saveGiftResponses(link, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new BaseResponse<>(response));
+    }
+
+    @GetMapping("/responses/bundles/{link}/result")
+    public ResponseEntity<BaseResponse<ResponseResultDto>> getResponseResult(@PathVariable String link) {
+        ResponseResultDto result = responseService.getResponseResult(link);
+        return ResponseEntity.ok(new BaseResponse<>(result));
     }
 }

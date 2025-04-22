@@ -11,6 +11,7 @@ import com.picktory.domain.gift.repository.GiftImageRepository;
 import com.picktory.domain.gift.repository.GiftRepository;
 import com.picktory.domain.bundle.enums.BundleStatus;
 import com.picktory.domain.response.dto.ResponseBundleDto;
+import com.picktory.domain.response.dto.ResponseResultDto;
 import com.picktory.domain.response.dto.SaveGiftResponsesRequest;
 import com.picktory.domain.response.dto.SaveGiftResponsesResponse;
 import com.picktory.domain.response.entity.Response;
@@ -44,6 +45,21 @@ public class ResponseService {
         updateGiftResponseStatus(gifts, responses);
 
         return ResponseBundleDto.fromEntity(bundle, gifts, images);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseResultDto getResponseResult(String link) {
+        Bundle bundle = findBundleByLink(link);
+
+        // COMPLETED 상태만 조회 가능
+        if (bundle.getStatus() != BundleStatus.COMPLETED) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_RESULT);
+        }
+
+        List<Gift> gifts = findGiftsByBundleId(bundle.getId());
+        List<GiftImage> images = findGiftImages(gifts);
+
+        return ResponseResultDto.fromEntities(bundle.getId(), gifts, images);
     }
 
     @Transactional
@@ -139,7 +155,6 @@ public class ResponseService {
         responseRepository.saveAll(responses);
     }
 
-
     private GiftResponseTag validateAndParseResponseTag(String responseTag) {
         try {
             return GiftResponseTag.valueOf(responseTag);
@@ -182,7 +197,6 @@ public class ResponseService {
             default -> throw new BaseException(BaseResponseStatus.INVALID_LINK);
         }
     }
-
 
     private void updateGiftResponseStatus(List<Gift> gifts, List<Response> responses) {
         List<Long> respondedGiftIds = responses.stream()
