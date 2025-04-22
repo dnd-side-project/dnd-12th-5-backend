@@ -183,14 +183,15 @@ class ResponseServiceTest {
             when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
 
             // 실제 구현에서는 COMPLETED 상태도 정상 처리됨 (DRAFT만 예외)
+            // 테스트 기대값 수정
+
+            // when & then - 예외가 발생하지 않아야 함
             when(giftRepository.findAllByBundleId(bundle.getId())).thenReturn(List.of());
             when(giftImageRepository.findAllByGift_IdIn(any())).thenReturn(List.of());
             when(responseRepository.findAllByBundleIdAndGiftIds(anyLong(), any())).thenReturn(List.of());
 
-            // when
+            // 정상적으로 실행되어야 함
             ResponseBundleDto result = responseService.getBundleByLink(link);
-
-            // then
             assertThat(result).isNotNull();
         }
     }
@@ -338,7 +339,7 @@ class ResponseServiceTest {
             String link = "completed-link";
             Bundle bundle = createTestBundle(1L, link, BundleStatus.COMPLETED);
             Gift gift = createTestGift(1L, bundle.getId());
-            gift.updateResponse(GiftResponseTag.GREAT);
+            gift.updateResponse(GiftResponseTag.LIKE);
             GiftImage thumbnail = createTestGiftImage(gift.getId(), true);
 
             when(bundleRepository.findByLink(link)).thenReturn(Optional.of(bundle));
@@ -354,7 +355,7 @@ class ResponseServiceTest {
             assertThat(result.getGifts().get(0).getId()).isEqualTo(gift.getId());
             assertThat(result.getGifts().get(0).getName()).isEqualTo(gift.getName());
             assertThat(result.getGifts().get(0).getPurchaseUrl()).isEqualTo(gift.getPurchaseUrl());
-            assertThat(result.getGifts().get(0).getResponseTag()).isEqualTo(GiftResponseTag.GREAT.name());
+            assertThat(result.getGifts().get(0).getResponseTag()).isEqualTo(GiftResponseTag.LIKE.name());
             assertThat(result.getGifts().get(0).getThumbnail()).isEqualTo(thumbnail.getImageUrl());
             // 이제 ResponseResultDto에 imageUrls가 추가되었다면 확인 필요
             assertThat(result.getGifts().get(0).getImageUrls()).contains(thumbnail.getImageUrl());
