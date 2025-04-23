@@ -31,7 +31,8 @@ public class User extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder
-    public User(Long kakaoId, String nickname) {
+    public User(Long id, Long kakaoId, String nickname) {
+        this.id = id;
         this.kakaoId = kakaoId;
         this.nickname = nickname;
         this.isDeleted = false;
