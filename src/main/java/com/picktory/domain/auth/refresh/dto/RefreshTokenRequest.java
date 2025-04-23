@@ -1,4 +1,4 @@
-package com.picktory.domain.auth.dto;
+package com.picktory.domain.auth.refresh.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
