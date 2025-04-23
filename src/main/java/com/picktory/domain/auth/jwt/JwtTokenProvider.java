@@ -21,8 +21,8 @@ public class JwtTokenProvider {
 
     private final Key key;
 
-    private static final long ACCESS_TOKEN_VALIDITY = 60 * 1000L; // 24시간
-    private static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000L; // 7일
+    private static final long ACCESS_TOKEN_VALIDITY = 60 * 1000L; // 1분
+    private static final long REFRESH_TOKEN_VALIDITY = 2 * 60 * 1000L; // 2분
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String ROLE_USER = "ROLE_USER";
 
