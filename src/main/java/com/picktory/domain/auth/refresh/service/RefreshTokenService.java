@@ -47,7 +47,8 @@ public class RefreshTokenService {
                 .map(existingToken -> {
                     log.debug("Updating existing refresh token for user: {}", userId);
                     existingToken.updateToken(token, expiryDate);
-                    return existingToken;
+                    // 명시적으로 save 메서드 호출 추가
+                    return refreshTokenRepository.save(existingToken);
                 })
                 .orElseGet(() -> {
                     log.debug("Creating new refresh token for user: {}", userId);

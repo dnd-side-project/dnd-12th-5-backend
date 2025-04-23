@@ -21,7 +21,7 @@ public class JwtTokenProvider {
 
     private final Key key;
 
-    private static final long ACCESS_TOKEN_VALIDITY = 24 * 60 * 60 * 1000L; // 24시간
+    private static final long ACCESS_TOKEN_VALIDITY = 60 * 1000L; // 24시간
     private static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000L; // 7일
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String ROLE_USER = "ROLE_USER";
@@ -45,13 +45,16 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        // Refresh Token 생성
+        // Refresh Token 생성 - userId도 추가
         String refreshToken = Jwts.builder()
+                .setSubject(userId.toString())  // userId를 추가
+                .setIssuedAt(now)  // 발급 시간 추가
                 .setExpiration(refreshTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        return TokenDto.of(BEARER_PREFIX, accessToken, refreshToken, accessTokenExpiresIn);
+        // TokenDto 생성 시 refreshTokenExpiresIn도 함께 전달
+        return TokenDto.of(BEARER_PREFIX, accessToken, refreshToken, accessTokenExpiresIn, refreshTokenExpiresIn);
     }
 
     public String getUserId(String token) {

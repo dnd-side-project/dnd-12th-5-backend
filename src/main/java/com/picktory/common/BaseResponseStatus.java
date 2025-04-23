@@ -16,7 +16,7 @@ public enum BaseResponseStatus {
      */
     INVALID_USER_ID(false, 401, "유효하지 않은 사용자 ID입니다."),
     INVALID_ACCESS_TOKEN(false, 401, "액세스 토큰이 비어있습니다."),
-    INVALID_REFRESH_TOKEN(false, 401, "리프레시 토큰이 비어있습니다."),
+    INVALID_REFRESH_TOKEN(false, 401, "유효하지 않은 리프레시 토큰입니다."),
     INVALID_JWT(false, 401, "유효하지 않은 JWT입니다."),
     EXPIRED_REFRESHTOKEN(false, 401, "리프레시 토큰이 만료됐으니, 다시 로그인해주세요."),
     INVALID_USER_JWT(false, 403, "권한이 없는 유저의 접근입니다."),
@@ -66,7 +66,7 @@ public enum BaseResponseStatus {
     DATABASE_ERROR(false, 503, "데이터베이스 연결에 실패하였습니다."),
     SERVER_ERROR(false, 500, "서버와의 연결에 실패하였습니다."),
     KAKAO_API_ERROR(false, 502, "카카오 API 호출 중 오류가 발생했습니다."),
-    INTERNAL_SERVER_ERROR(false, 500, "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    INTERNAL_SERVER_ERROR(false, 500, "토큰 갱신 중 오류가 발생했습니다.");
 
     private final boolean isSuccess;
     private final int code;

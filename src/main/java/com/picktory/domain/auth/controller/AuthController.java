@@ -3,6 +3,7 @@ package com.picktory.domain.auth.controller;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponse;
+import com.picktory.domain.auth.dto.RefreshTokenRequest;
 import com.picktory.domain.user.dto.UserLoginRequest;
 import com.picktory.domain.user.dto.UserLoginResponse;
 import com.picktory.domain.auth.service.AuthService;
@@ -47,14 +48,14 @@ public class AuthController {
     /**
      * 토큰 갱신 API
      *
-     * @param refreshToken 리프레시 토큰
+     * @param refreshTokenRequest 리프레시 토큰 요청 객체
      * @return 새로운 로그인 응답 (JWT 토큰 포함)
      */
     @PostMapping("/auth/refresh")
-    public ResponseEntity<BaseResponse<UserLoginResponse>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
+    public ResponseEntity<BaseResponse<UserLoginResponse>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         try {
             log.info("Token refresh request received");
-            UserLoginResponse response = authService.refreshToken(refreshToken);
+            UserLoginResponse response = authService.refreshToken(refreshTokenRequest.getRefreshToken());
             return ResponseEntity.ok(BaseResponse.success(response, "토큰 갱신 성공"));
         } catch (BaseException e) {
             return ResponseEntity.status(e.getStatus().getCode())

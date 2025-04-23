@@ -59,7 +59,7 @@ public class AuthService {
             log.info("Login successful for user: {}", user.getId());
 
             // 5. 리프레시 토큰을 DB에 저장
-            LocalDateTime expiryDate = tokenDto.getAccessTokenExpiresIn()
+            LocalDateTime expiryDate = tokenDto.getRefreshTokenExpiresIn()  // 리프레시 토큰 만료일 사용하도록 수정
                     .toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
@@ -91,22 +91,27 @@ public class AuthService {
     public UserLoginResponse refreshToken(String refreshToken) {
         try {
             // 1. 리프레시 토큰 검증
-            RefreshToken refreshTokenEntity = refreshTokenService.findByToken(refreshToken)
-                    .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_JWT));
+            if (!jwtTokenProvider.validateToken(refreshToken)) {
+                throw new BaseException(BaseResponseStatus.INVALID_REFRESH_TOKEN);
+            }
 
-            // 2. 만료 여부 확인
+            // 2. 리프레시 토큰 엔티티 조회
+            RefreshToken refreshTokenEntity = refreshTokenService.findByToken(refreshToken)
+                    .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_REFRESH_TOKEN));
+
+            // 3. 만료 여부 확인
             refreshTokenService.verifyExpiration(refreshTokenEntity);
 
-            // 3. 사용자 조회
+            // 4. 사용자 조회
             Long userId = refreshTokenEntity.getUserId();
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
-            // 4. 새 액세스 토큰 발급
+            // 5. 새 액세스 토큰 발급
             TokenDto tokenDto = jwtTokenProvider.generateToken(userId);
 
-            // 5. 리프레시 토큰 업데이트
-            LocalDateTime expiryDate = tokenDto.getAccessTokenExpiresIn()
+            // 6. 리프레시 토큰 업데이트
+            LocalDateTime expiryDate = tokenDto.getRefreshTokenExpiresIn()  // 리프레시 토큰 만료일 사용하도록 수정
                     .toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();

@@ -15,13 +15,15 @@ public class TokenDto {
     private String accessToken;
     private String refreshToken;
     private Date accessTokenExpiresIn;
+    private Date refreshTokenExpiresIn;
 
-    public static TokenDto of(String grantType, String accessToken, String refreshToken, Date expiresIn) {
+    public static TokenDto of(String grantType, String accessToken, String refreshToken, Date accessTokenExpiresIn, Date refreshTokenExpiresIn) {
         TokenDto token = TokenDto.builder()
                 .grantType(grantType)
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .accessTokenExpiresIn(expiresIn)
+                .accessTokenExpiresIn(accessTokenExpiresIn)
+                .refreshTokenExpiresIn(refreshTokenExpiresIn)
                 .build();
 
         token.validate();
