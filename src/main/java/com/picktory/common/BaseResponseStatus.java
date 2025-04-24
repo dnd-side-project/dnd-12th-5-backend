@@ -27,7 +27,7 @@ public enum BaseResponseStatus {
     BUNDLE_DAILY_LIMIT_EXCEEDED(false, 400, "하루에 최대 10개의 보따리만 생성할 수 있습니다."),
     BUNDLE_NAME_REQUIRED(false, 400, "보따리 이름을 입력하세요."),
     BUNDLE_DESIGN_REQUIRED(false, 400, "보따리 디자인을 선택하세요."),
-    BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 2개의 선물을 포함해야 합니다."),
+    BUNDLE_MINIMUM_GIFTS_REQUIRED(false, 400, "보따리는 최소 1개의 선물을 포함해야 합니다."),
     GIFT_IMAGE_REQUIRED(false, 400, "선물에는 이미지가 최소 1장 포함되어야 합니다."),
     INVALID_JSON_REQUEST(false, 400, "잘못된 JSON 형식입니다."),
     INVALID_DESIGN_TYPE(false, 400, "유효하지 않은 디자인 타입입니다. 가능한 값: RED, GREEN, YELLOW, PINK, BLUE"),

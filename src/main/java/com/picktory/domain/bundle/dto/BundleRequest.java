@@ -28,7 +28,7 @@ public class BundleRequest {
     private DesignType designType;
 
     @NotNull
-    @Size(min = 2, max = 6, message = "보따리에는 최소 2개, 최대 6개의 선물을 담아야 합니다.")
+    @Size(min = 1, max = 6, message = "보따리에는 최소 1개, 최대 6개의 선물을 담아야 합니다.")
     private List<GiftRequest> gifts;
 
     public Bundle toEntity(User user) {
