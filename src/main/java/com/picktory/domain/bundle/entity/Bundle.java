@@ -111,4 +111,14 @@ public class Bundle extends BaseEntity {
             throw new BaseException(BaseResponseStatus.INVALID_CHARACTER_TYPE);
         }
     }
+
+    /**
+     * 보따리의 이름을 업데이트
+     */
+    public void updateName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new BaseException(BaseResponseStatus.BUNDLE_NAME_REQUIRED);
+        }
+        this.name = name;
+    }
 }

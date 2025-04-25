@@ -132,5 +132,17 @@ public class BundleController {
         BundleSummaryResponse response = bundleService.getBundle(id);
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
+
+   /**
+     * 보따리 이름 업데이트 API
+     */
+    @PatchMapping("/{bundleId}")
+    public ResponseEntity<BaseResponse<BundleResponse>> updateBundleName(
+            @PathVariable Long bundleId,
+            @Valid @RequestBody BundleNameUpdateRequest request
+    ) {
+        BundleResponse response = bundleService.updateBundleName(bundleId, request);
+        return ResponseEntity.ok(new BaseResponse<>(response));
+    }
 }
 
