@@ -281,4 +281,19 @@ public class BundleService {
         log.debug("{} - [id: {}] name: {}, message: {}, purchaseUrl: {}",
                 prefix, gift.getId(), gift.getName(), gift.getMessage(), gift.getPurchaseUrl());
     }
+
+    @Transactional
+    public void updateBundleName(Long bundleId, BundleNameUpdateRequest request) {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        Bundle bundle = validateAndGetBundle(bundleId, currentUser);
+
+        // DRAFT 상태 검증
+        if (bundle.getStatus() != BundleStatus.DRAFT) {
+            throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_DRAFT);
+        }
+
+        // 이름 업데이트
+        bundle.updateName(request.getName());
+        bundleRepository.save(bundle);
+    }
 }

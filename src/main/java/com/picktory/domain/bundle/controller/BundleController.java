@@ -2,6 +2,7 @@ package com.picktory.domain.bundle.controller;
 
 import com.picktory.common.BaseResponse;
 
+import com.picktory.common.BaseResponseStatus;
 import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.bundle.dto.*;
 
@@ -132,5 +133,17 @@ public class BundleController {
         BundleSummaryResponse response = bundleService.getBundle(id);
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
+
+   /**
+     * 보따리 이름 업데이트 API
+     */
+   @PatchMapping("/{bundleId}")
+   public ResponseEntity<BaseResponse<Void>> updateBundleName(
+           @PathVariable Long bundleId,
+           @Valid @RequestBody BundleNameUpdateRequest request
+   ) {
+       bundleService.updateBundleName(bundleId, request);
+       return ResponseEntity.ok(new BaseResponse<>(BaseResponseStatus.SUCCESS));
+   }
 }
 
