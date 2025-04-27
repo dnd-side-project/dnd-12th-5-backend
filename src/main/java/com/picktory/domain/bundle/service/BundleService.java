@@ -283,27 +283,17 @@ public class BundleService {
     }
 
     @Transactional
-    public BundleResponse updateBundleName(Long bundleId, BundleNameUpdateRequest request) {
-        log.info("보따리 이름 업데이트 요청: bundleId = {}", bundleId);
-
+    public void updateBundleName(Long bundleId, BundleNameUpdateRequest request) {
         User currentUser = authenticationService.getAuthenticatedUser();
         Bundle bundle = validateAndGetBundle(bundleId, currentUser);
 
-        // DRAFT 상태가 아니면 이름 변경 불가
+        // DRAFT 상태 검증
         if (bundle.getStatus() != BundleStatus.DRAFT) {
             throw new BaseException(BaseResponseStatus.INVALID_BUNDLE_STATUS_FOR_DRAFT);
         }
 
         // 이름 업데이트
         bundle.updateName(request.getName());
-        Bundle savedBundle = bundleRepository.save(bundle);
-
-        // 기존 선물 및 이미지 조회
-        List<Gift> savedGifts = giftService.getGiftsByBundleId(bundleId);
-        List<GiftImage> savedImages = giftService.getImagesByGiftIds(
-                savedGifts.stream().map(Gift::getId).toList()
-        );
-
-        return BundleResponse.fromEntity(savedBundle, savedGifts, savedImages);
+        bundleRepository.save(bundle);
     }
 }
