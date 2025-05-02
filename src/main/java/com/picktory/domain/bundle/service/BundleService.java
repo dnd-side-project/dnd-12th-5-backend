@@ -143,7 +143,7 @@ public class BundleService {
         if (request.getDesignType() == null) {
             throw new BaseException(BaseResponseStatus.BUNDLE_DESIGN_REQUIRED);
         }
-        if (request.getGifts() == null || request.getGifts().size() < 2) {
+        if (request.getGifts() == null || request.getGifts().size() < 1) {
             throw new BaseException(BaseResponseStatus.BUNDLE_MINIMUM_GIFTS_REQUIRED);
         }
     }
