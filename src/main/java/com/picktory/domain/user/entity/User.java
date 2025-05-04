@@ -45,4 +45,9 @@ public class User extends BaseEntity {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
     }
+
+    public void reactivate() {
+        this.isDeleted = false;
+        this.deletedAt = null;
+    }
 }

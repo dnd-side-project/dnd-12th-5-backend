@@ -139,7 +139,10 @@ public class AuthService {
                 .map(foundUser -> {
                     log.info("Found existing user: {}", foundUser.getId());
                     if (foundUser.isDeleted()) {
-                        throw new BaseException(BaseResponseStatus.ALREADY_DELETED_USER);
+                        // 탈퇴한 사용자 재활성화
+                        log.info("Reactivating deleted user: {}", foundUser.getId());
+                        foundUser.reactivate();
+                        return userRepository.save(foundUser);
                     }
                     return foundUser;
                 })
