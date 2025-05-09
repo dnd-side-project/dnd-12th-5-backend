@@ -1,7 +1,7 @@
 # 🎁 Picktory
 
 <div align="center">
-    <img src="E:\스크린샷1.jpeg" alt="Picktory Logo" width="500px" />
+    <img src="src/image/image1.jpeg" alt="Picktory Logo" width="500px" />
     <h3>선물의 의미는 유지하면서, 상대방의 취향을 자연스럽게 알 수 있는 서비스</h3>
 </div>
 
@@ -22,12 +22,12 @@
 ## 💡 서비스 소개
 
 ### 배경 및 문제 의식
-<img src="E:\스크린샷2.jpeg" alt="Service Background" width="600px" />
+<img src="src/image/image2.jpeg" alt="Service Background" width="600px" />
 
 선물 고르기는 많은 사람들에게 어려운 과제입니다. 125명의 설문 결과, 사람들이 상대방의 선호도를 직접 물어보지 못하는 가장 큰 이유는 **'선물의 감성이 사라지고 성의가 없어 보일까봐'**였습니다.
 
 ### 해결책: Picktory
-<img src="E:\스크린샷3.jpeg" alt="Solution" width="600px" />
+<img src="src/image/image3.jpeg" alt="Solution" width="600px" />
 
 Picktory는 다음과 같은 솔루션을 제공합니다:
 
@@ -87,10 +87,10 @@ Picktory는 다음과 같은 솔루션을 제공합니다:
 ## 🏗️ 시스템 아키텍처
 
 ### Frontend Architecture
-<img src="E:\스크린샷4.jpeg" alt="Frontend Architecture" width="800px" />
+<img src="src/image/image4.jpeg" alt="Frontend Architecture" width="800px" />
 
 ### Backend Architecture
-<img src="E:\스크린샷5.jpeg" alt="Backend Architecture" width="800px" />
+<img src="src/image/image5.jpeg" alt="Backend Architecture" width="800px" />
 
 ## 🧪 개발 프로세스
 
