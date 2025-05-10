@@ -3,6 +3,8 @@ package com.picktory.domain.user.service;
 import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.refresh.service.RefreshTokenService;
+import com.picktory.domain.bundle.repository.BundleRepository;
+import com.picktory.domain.survey.repository.SurveyRepository;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
@@ -26,6 +28,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final KakaoClient kakaoClient;
     private final RefreshTokenService refreshTokenService;
+
+    private final BundleRepository bundleRepository;
+    private final SurveyRepository surveyRepository;
 
     /**
      * 현재 인증된 사용자의 정보를 조회합니다.
@@ -156,5 +161,31 @@ public class UserService {
                     log.warn("User not found with Kakao ID: {}", kakaoId);
                     return new BaseException(BaseResponseStatus.USER_NOT_FOUND);
                 });
+    }
+
+    /**
+     *  설문조사 대상자 검사
+     */
+    @Transactional
+    public boolean isSurveyTarget(User user) {
+        // 설문조사 대상이 아닐 경우 (이미 설문 완료한 케이스)
+        if (user.isSurveyExcluded()) {
+            return false;
+        }
+
+        long count = bundleRepository.countByUserId(user.getId());
+
+        // 설문조사 대상이 아닐 경우 (비대상)
+        if (count > 1) {
+            user.markSurveyExcluded();
+            return false;
+        }
+
+        // 설문조사 대상일 경우 (보따리 최초 생성자)
+        if (count == 1) {
+            user.markSurveyExcluded();
+            return true;
+        }
+        return false;
     }
 }
