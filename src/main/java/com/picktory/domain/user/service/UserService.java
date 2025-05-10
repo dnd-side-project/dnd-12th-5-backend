@@ -4,7 +4,6 @@ import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.refresh.service.RefreshTokenService;
 import com.picktory.domain.bundle.repository.BundleRepository;
-import com.picktory.domain.survey.repository.SurveyRepository;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
@@ -28,9 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final KakaoClient kakaoClient;
     private final RefreshTokenService refreshTokenService;
-
     private final BundleRepository bundleRepository;
-    private final SurveyRepository surveyRepository;
 
     /**
      * 현재 인증된 사용자의 정보를 조회합니다.
