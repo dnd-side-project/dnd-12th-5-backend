@@ -30,6 +30,9 @@ public class User extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
+    @Column(nullable = false)
+    private boolean isSurveyExcluded = false;
+
     @Builder
     public User(Long id, Long kakaoId, String nickname) {
         this.id = id;
@@ -49,5 +52,9 @@ public class User extends BaseEntity {
     public void reactivate() {
         this.isDeleted = false;
         this.deletedAt = null;
+    }
+
+    public void markSurveyExcluded() {
+        this.isSurveyExcluded = true;
     }
 }

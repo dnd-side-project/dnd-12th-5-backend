@@ -27,6 +27,9 @@ public class GlobalExceptionHandler {
         if (ex.getMessage().contains("com.picktory.domain.bundle.enums.DesignType")) {
             return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.INVALID_DESIGN_TYPE));
         }
+        if (ex.getMessage().contains("com.picktory.domain.survey.enums.SurveySatisfaction")) {
+            return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.INVALID_SURVEY_SATISFACTION));
+        }
 
         return ResponseEntity.badRequest().body(new BaseResponse<>(BaseResponseStatus.INVALID_JSON_REQUEST));
     }

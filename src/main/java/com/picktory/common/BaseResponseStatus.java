@@ -53,6 +53,7 @@ public enum BaseResponseStatus {
     INVALID_GIFT_ID(false, 400, "존재하지 않는 선물입니다."),
     INVALID_GIFT_UPDATE(false,400,"요청 사항이 비어있습니다."),
 
+    INVALID_SURVEY_SATISFACTION(false, 400, "유효하지 않은 설문 응답값입니다. 가능한 값: GOOD, SOSO, BAD"),
 
     /**
      * 404: Gift 관련 오류

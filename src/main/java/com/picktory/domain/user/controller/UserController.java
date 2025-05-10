@@ -1,7 +1,9 @@
 package com.picktory.domain.user.controller;
 
 import com.picktory.common.BaseResponse;
+import com.picktory.config.auth.AuthenticationService;
 import com.picktory.domain.user.dto.UserResponse;
+import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AuthenticationService authenticationService;
 
     /**
      * 내 정보 조회 API
@@ -53,5 +56,14 @@ public class UserController {
         log.info("Logout request received");
         userService.logout();
         return ResponseEntity.ok(BaseResponse.success(null, "로그아웃 성공"));
+    }
+
+    /**
+     * 설문조사 대상자 검사 API
+     */
+    @GetMapping("/users/me/survey-target")
+    public ResponseEntity<Boolean> isSurveyTarget() {
+        User currentUser = authenticationService.getAuthenticatedUser();
+        return ResponseEntity.ok(userService.isSurveyTarget(currentUser));
     }
 }
