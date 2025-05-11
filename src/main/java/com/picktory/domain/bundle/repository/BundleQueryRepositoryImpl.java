@@ -34,4 +34,23 @@ public class BundleQueryRepositoryImpl implements BundleQueryRepository {
                 .orderBy(sortPriority.asc(), bundle.createdAt.desc())
                 .fetch();
     }
+
+    @Override
+    public List<Bundle> findTop8BundlesByUserDesc(User user) {
+        QBundle bundle = QBundle.bundle;
+
+        NumberExpression<Integer> sortPriority = new CaseBuilder()
+                .when(bundle.status.eq(BundleStatus.COMPLETED)
+                        .and(bundle.isRead.isFalse()))
+                .then(0)
+                .otherwise(1);
+
+        return queryFactory
+                .selectFrom(bundle)
+                .where(bundle.user.eq(user))
+                .orderBy(sortPriority.asc(), bundle.createdAt.desc())
+                .limit(8)
+                .fetch();
+    }
+
 }

@@ -118,7 +118,7 @@ public class BundleService {
     @Transactional(readOnly = true)
     public List<BundleMainListResponse> getUserMainBundles() {
         User currentUser = authenticationService.getAuthenticatedUser();
-        List<Bundle> bundles = bundleRepository.findTop8ByUser_IdOrderByUpdatedAtDesc(currentUser.getId());
+        List<Bundle> bundles = bundleQueryRepository.findTop8BundlesByUserDesc(currentUser);
         return BundleMainListResponse.listFrom(bundles);
     }
 

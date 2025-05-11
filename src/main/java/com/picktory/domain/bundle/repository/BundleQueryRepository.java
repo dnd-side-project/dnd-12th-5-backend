@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface BundleQueryRepository {
     List<Bundle> findBundlesByUserDesc(User user);
+    List<Bundle> findTop8BundlesByUserDesc(User user);
+
 }
