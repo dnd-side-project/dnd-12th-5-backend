@@ -29,4 +29,6 @@ public interface BundleRepository extends JpaRepository<Bundle, Long> {
 
 
     Optional<Bundle> findByIdAndStatus(Long id, BundleStatus status);
+
+    long countByUserId(Long userId);
 }
