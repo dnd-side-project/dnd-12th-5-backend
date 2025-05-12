@@ -11,6 +11,7 @@ import com.picktory.domain.bundle.dto.BundleResponse;
 
 import com.picktory.domain.bundle.entity.Bundle;
 import com.picktory.domain.bundle.enums.BundleStatus;
+import com.picktory.domain.bundle.repository.BundleQueryRepository;
 import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.gift.dto.*;
 import com.picktory.domain.gift.entity.Gift;
@@ -39,6 +40,7 @@ public class BundleService {
     private final BundleRepository bundleRepository;
     private final AuthenticationService authenticationService;
     private final GiftService giftService;
+    private final BundleQueryRepository bundleQueryRepository;
 
     /**
      * 보따리 생성
@@ -105,9 +107,10 @@ public class BundleService {
      */
     @Transactional(readOnly = true)
     public List<BundleListResponse> getMyBundles(User user) {
-        List<Bundle> bundles = bundleRepository.findByUserIdOrderByUpdatedAtDesc(user.getId());
+        List<Bundle> bundles = bundleQueryRepository.findBundlesByUserDesc(user);
         return BundleListResponse.listFrom(bundles);
     }
+
 
     /**
      * 사용자의 최신 8개 보따리 목록 조회
@@ -115,7 +118,7 @@ public class BundleService {
     @Transactional(readOnly = true)
     public List<BundleMainListResponse> getUserMainBundles() {
         User currentUser = authenticationService.getAuthenticatedUser();
-        List<Bundle> bundles = bundleRepository.findTop8ByUser_IdOrderByUpdatedAtDesc(currentUser.getId());
+        List<Bundle> bundles = bundleQueryRepository.findTop8BundlesByUserDesc(currentUser);
         return BundleMainListResponse.listFrom(bundles);
     }
 
