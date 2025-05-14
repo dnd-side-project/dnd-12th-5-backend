@@ -27,6 +27,8 @@ public interface BundleRepository extends JpaRepository<Bundle, Long> {
      */
     List<Bundle> findTop8ByUser_IdOrderByUpdatedAtDesc(Long userId);
 
+    void deleteAllByUserId(Long userId);
+
 
     Optional<Bundle> findByIdAndStatus(Long id, BundleStatus status);
 
