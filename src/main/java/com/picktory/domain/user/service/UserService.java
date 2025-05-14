@@ -3,6 +3,7 @@ package com.picktory.domain.user.service;
 import com.picktory.common.exception.BaseException;
 import com.picktory.common.BaseResponseStatus;
 import com.picktory.domain.auth.refresh.service.RefreshTokenService;
+import com.picktory.domain.bundle.repository.BundleRepository;
 import com.picktory.domain.user.dto.UserResponse;
 import com.picktory.domain.user.entity.User;
 import com.picktory.domain.user.repository.UserRepository;
@@ -26,6 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final KakaoClient kakaoClient;
     private final RefreshTokenService refreshTokenService;
+    private final BundleRepository bundleRepository;
 
     /**
      * 현재 인증된 사용자의 정보를 조회합니다.
@@ -51,13 +53,16 @@ public class UserService {
         log.info("Processing withdrawal for user: {}", user.getId());
 
         try {
-            // 1. 카카오 계정 연결 해제
+            // 1. 사용자의 모든 보따리 삭제
+            bundleRepository.deleteAllByUserId(user.getId());
+
+            // 2. 카카오 계정 연결 해제
             kakaoClient.unlinkKakaoAccount(user.getKakaoId());
 
-            // 2. 리프레시 토큰 삭제
+            // 3. 리프레시 토큰 삭제
             refreshTokenService.deleteByUserId(user.getId());
 
-            // 3. 사용자 삭제 처리
+            // 4. 사용자 삭제 처리
             user.delete();
 
             log.info("User successfully withdrawn: {}", user.getId());
