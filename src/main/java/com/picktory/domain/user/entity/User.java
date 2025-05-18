@@ -52,6 +52,7 @@ public class User extends BaseEntity {
     public void reactivate() {
         this.isDeleted = false;
         this.deletedAt = null;
+        this.isSurveyExcluded = false; // 사용자 재활성화 시 설문 플래그 초기화
     }
 
     public void markSurveyExcluded() {
